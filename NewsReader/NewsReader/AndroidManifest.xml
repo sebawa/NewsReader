@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="de.farw.newsreader">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application android:icon="@drawable/icon">
+        <activity android:name="de.farw.newsreader.FeedsList" android:label="@string/app_name">
+            <intent-filter>
+<!--                <action android:value="android.intent.action.MAIN" />-->
+<!--                <category android:value="android.intent.category.LAUNCHER" />-->
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="de.farw.newsreader.URLEditor" android:label="@string/url_editor" />
+        <activity android:name="de.farw.newsreader.ArticlesList" android:label="@string/articles_list" />
+        <activity android:name="de.farw.newsreader.FeedView" />
+    </application>
+</manifest> 

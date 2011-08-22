@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NewsDroid</string>
+    <string name="menu_insert">Add Feed</string>
+    <string name="menu_delete">Delete Feed</string>
+    <string name="button_ok">Add Feed</string>
+    <string name="button_cancel">Cancel</string>  
+    <string name="url_editor">Feed URL</string>
+    <string name="articles_list">Headlines</string>
+    <string name="invalid_url">Invalid URL</string>
+    <string name="invalid_url_content">The URL you have entered is invalid.</string>
+    <string name="ok">Ok</string>
+    <string name="unread">Unread News</string>
+</resources>
