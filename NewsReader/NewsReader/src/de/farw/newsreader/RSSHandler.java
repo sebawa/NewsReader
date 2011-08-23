@@ -3,6 +3,8 @@ package de.farw.newsreader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -23,6 +25,8 @@ public class RSSHandler extends DefaultHandler {
 	private boolean inItem = false;
 	private boolean inTitle = false;
 	private boolean inLink = false;
+	private boolean inDescription = false;
+	private boolean inDate = false;
 
 	// Feed and Article objects to use for temporary storage
 	private Article currentArticle = new Article();
@@ -32,7 +36,7 @@ public class RSSHandler extends DefaultHandler {
 	private int articlesAdded = 0;
 
 	// Number of articles to download
-	private static final int ARTICLES_LIMIT = 15;
+	private static final int ARTICLES_LIMIT = 15; // TODO make it variable
 
 	// The possible values for targetFlag
 	private static final int TARGET_FEED = 0;
@@ -42,6 +46,13 @@ public class RSSHandler extends DefaultHandler {
 	private int targetFlag;
 
 	private NewsDroidDB droidDB = null;
+	private boolean noDate = false;
+	
+	public RSSHandler() {
+		currentFeed.title = "";
+		currentArticle.title = "";
+		currentArticle.description = "";
+	}
 
 	public void startElement(String uri, String name, String qName, Attributes atts) {
 		if (name.trim().equals("title"))
@@ -50,6 +61,10 @@ public class RSSHandler extends DefaultHandler {
 			inItem = true;
 		else if (name.trim().equals("link"))
 			inLink = true;
+		else if (name.trim().equals("description"))
+			inDescription = true;
+		else if (name.trim().equals("pubDate"))
+			inDate = true;
 	}
 
 	public void endElement(String uri, String name, String qName)
@@ -60,28 +75,35 @@ public class RSSHandler extends DefaultHandler {
 			inItem = false;
 		else if (name.trim().equals("link"))
 			inLink = false;
+		else if (name.trim().equals("description"))
+			inDescription = false;
+		else if (name.trim().equals("pubDate"))
+			inDate = false;
 
 		// Check if looking for feed, and if feed is complete
-		if (targetFlag == TARGET_FEED && currentFeed.url != null
-				&& currentFeed.title != null) {
+		if (targetFlag == TARGET_FEED && currentFeed.url != null && currentFeed.title != "") {
 
 			// We know everything we need to know, so insert feed and exit
 			droidDB.insertFeed(currentFeed.title, currentFeed.url);
+			currentFeed.title = "";
 			throw new SAXException();
 		}
 
 		// Check if looking for article, and if article is complete
-		if (targetFlag == TARGET_ARTICLES && currentArticle.url != null
-				&& currentArticle.title != null) {
-			droidDB.insertArticle(currentFeed.feedId, currentArticle.title,
-					currentArticle.url);
-			currentArticle.title = null;
+		if (targetFlag == TARGET_ARTICLES && currentArticle.url != null && currentArticle.title != "" && currentArticle.description != ""
+				&& (noDate || currentArticle.date != null)) {
+			droidDB.insertArticle(currentFeed.feedId, currentArticle.title, currentArticle.url, currentArticle.description, currentArticle.date);
+			currentArticle.title = "";
 			currentArticle.url = null;
+			currentArticle.description = "";
+			currentArticle.date = null;
+			noDate = false;
 
 			// Lets check if we've hit our limit on number of articles
 			articlesAdded++;
-			if (articlesAdded >= ARTICLES_LIMIT)
+			if (articlesAdded >= ARTICLES_LIMIT) {
 				throw new SAXException();
+			}
 		}
 
 	}
@@ -94,12 +116,26 @@ public class RSSHandler extends DefaultHandler {
 			// If not in item, then title/link refers to feed
 			if (!inItem) {
 				if (inTitle)
-					currentFeed.title = chars;
+					currentFeed.title += chars;
 			} else {
 				if (inLink)
 					currentArticle.url = new URL(chars);
 				if (inTitle)
-					currentArticle.title = chars;
+					currentArticle.title += chars;
+				if (inDescription)
+					currentArticle.description += chars;
+				if (inDate) { // date formated like: Tue, 23 Aug 2011 12:56:35 +0200
+					try {
+						currentArticle.date = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z").parse(chars);
+					} catch (ParseException e) {
+						try {
+							currentArticle.date = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z").parse(chars);
+						} catch (ParseException f) {
+							currentArticle.date = null;
+							noDate = true;
+						}
+					}
+				}
 			}
 		} catch (MalformedURLException e) {
 			Log.e("NewsDroid", e.toString());

@@ -3,6 +3,8 @@ package de.farw.newsreader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import android.app.ListActivity;
@@ -31,19 +33,11 @@ public class ArticlesList extends ListActivity {
 
 			if (icicle != null) {
 				feed.feedId = icicle.getLong("feed_id");
-//				if (feed.feedId == -1) {
-//					fillData();
-//					return;
-//				}
 				feed.title = icicle.getString("title");
 				feed.url = new URL(icicle.getString("url"));
 			} else {
 				Bundle extras = getIntent().getExtras();
 				feed.feedId = extras.getLong("feed_id");
-//				if (feed.feedId == -1) {
-//					fillData();
-//					return;
-//				}
 				feed.title = extras.getString("title");
 				feed.url = new URL(extras.getString("url"));
 
@@ -75,8 +69,11 @@ public class ArticlesList extends ListActivity {
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
-		String uri = articles.get(position).url.toString();
-		Long articleId = articles.get(position).articleId;
+		Article currentArticle = articles.get(position);
+		String uri = currentArticle.url.toString();
+		Long articleId = currentArticle.articleId;
+		String description = currentArticle.description;
+		String title = currentArticle.title;
 		droidDB.setRead(articleId);
 
 //		FeedAnalyzer feedanalyzer = new FeedAnalyzer(uri);
@@ -87,8 +84,9 @@ public class ArticlesList extends ListActivity {
 //		}
 		try {
 			Intent i = new Intent(this, FeedView.class);
-//			Intent i = new Intent(this, FeedsList.class);
 			i.putExtra("url", uri);
+			i.putExtra("description", description);
+			i.putExtra("title", title);
 			startActivity(i);
 		} catch (Exception e) {
 			Log.e("NewsDroid", e.toString());
@@ -98,6 +96,9 @@ public class ArticlesList extends ListActivity {
 	private void fillData() {
 		List<String> items = new ArrayList<String>();
 		articles = droidDB.getArticles(feed.feedId);
+		Collections.sort(articles, new Comparator<Article>() {
+			public int compare(Article a1, Article a2) { return a2.date.compareTo(a1.date); }
+		});
 
 		for (Article article : articles) {
 			items.add(article.title);

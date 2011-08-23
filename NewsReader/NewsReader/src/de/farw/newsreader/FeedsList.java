@@ -49,21 +49,21 @@ public class FeedsList extends ListActivity {
 		// menu.add(0, ACTIVITY_INSERT, R.string.menu_insert);
 		// menu.add(0, ACTIVITY_DELETE, R.string.menu_delete);
 		menu.add(0, ACTIVITY_INSERT, android.view.Menu.NONE,
-				R.string.menu_insert); // TODO
+				R.string.menu_insert);
 		menu.add(0, ACTIVITY_DELETE, android.view.Menu.NONE,
 				R.string.menu_delete);
 		return true;
 	}
 
 	@Override
-	public boolean onMenuItemSelected(int featureId, MenuItem item) { // TODO
+	public boolean onMenuItemSelected(int featureId, MenuItem item) { 
 		super.onMenuItemSelected(featureId, item);
-		switch (item.getItemId()) { // TODO
+		switch (item.getItemId()) {
 		case ACTIVITY_INSERT:
 			createFeed();
 			break;
 		case ACTIVITY_DELETE:
-			droidDB.deleteFeed(feeds.get((int) getSelectedItemId()).feedId); // TODO
+			droidDB.deleteFeed(feeds.get((int) getSelectedItemId()).feedId); 
 			fillData();
 			break;
 		}
@@ -73,14 +73,11 @@ public class FeedsList extends ListActivity {
 
 	private void createFeed() {
 		Intent i = new Intent(this, URLEditor.class);
-		startActivityForResult(i, ACTIVITY_INSERT); // TODO
+		startActivityForResult(i, ACTIVITY_INSERT);
 	}
 
 	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data /*
-																				 * Bundle
-																				 * extras
-																				 */) { // TODO
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data); // , extras);
 		fillData();
 	}
@@ -111,8 +108,7 @@ public class FeedsList extends ListActivity {
 			items.add(feed.title);
 		}
 
-		ArrayAdapter<String> notes = new ArrayAdapter<String>(this,
-				R.layout.feeds_row, items);
+		ArrayAdapter<String> notes = new ArrayAdapter<String>(this, R.layout.feeds_row, items);
 		setListAdapter(notes);
 	}
 
