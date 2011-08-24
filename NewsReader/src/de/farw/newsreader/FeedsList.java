@@ -46,8 +46,6 @@ public class FeedsList extends ListActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
-		// menu.add(0, ACTIVITY_INSERT, R.string.menu_insert);
-		// menu.add(0, ACTIVITY_DELETE, R.string.menu_delete);
 		menu.add(0, ACTIVITY_INSERT, android.view.Menu.NONE,
 				R.string.menu_insert);
 		menu.add(0, ACTIVITY_DELETE, android.view.Menu.NONE,
@@ -63,7 +61,7 @@ public class FeedsList extends ListActivity {
 			createFeed();
 			break;
 		case ACTIVITY_DELETE:
-			droidDB.deleteFeed(feeds.get((int) getSelectedItemId()).feedId); 
+			droidDB.deleteFeed(feeds.get((int) getSelectedItemId()-1).feedId); 
 			fillData();
 			break;
 		}

@@ -11,12 +11,15 @@ import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 public class ArticlesList extends ListActivity {
 
+	private static final int ACTIVITY_REFRESH = 1;
 	private List<Article> articles;
 	private Feed feed;
 	private NewsDroidDB droidDB;
@@ -76,12 +79,6 @@ public class ArticlesList extends ListActivity {
 		String title = currentArticle.title;
 		droidDB.setRead(articleId);
 
-//		FeedAnalyzer feedanalyzer = new FeedAnalyzer(uri);
-//		try {
-//			feedanalyzer.fetchHTML();
-//		} catch (IOException e) {
-//			Log.e("NewsDroid", e.toString());
-//		}
 		try {
 			Intent i = new Intent(this, FeedView.class);
 			i.putExtra("url", uri);
@@ -93,11 +90,37 @@ public class ArticlesList extends ListActivity {
 		}
 	}
 
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		menu.add(0, ACTIVITY_REFRESH, android.view.Menu.NONE,
+				R.string.menu_refresh_articles);
+		return true;
+	}
+
+	@Override
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+		super.onMenuItemSelected(featureId, item);
+		switch (item.getItemId()) {
+		case ACTIVITY_REFRESH:
+			if (feed.feedId != -1) {
+				RSSHandler rh = new RSSHandler();
+				rh.updateArticles(this, feed);
+			}
+			fillData();
+			break;
+		}
+
+		return true;
+	}
+
 	private void fillData() {
 		List<String> items = new ArrayList<String>();
 		articles = droidDB.getArticles(feed.feedId);
 		Collections.sort(articles, new Comparator<Article>() {
-			public int compare(Article a1, Article a2) { return a2.date.compareTo(a1.date); }
+			public int compare(Article a1, Article a2) {
+				return a2.date.compareTo(a1.date);
+			}
 		});
 
 		for (Article article : articles) {
