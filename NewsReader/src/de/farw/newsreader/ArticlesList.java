@@ -2,20 +2,27 @@ package de.farw.newsreader;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 public class ArticlesList extends ListActivity {
 
@@ -23,6 +30,8 @@ public class ArticlesList extends ListActivity {
 	private List<Article> articles;
 	private Feed feed;
 	private NewsDroidDB droidDB;
+	private ArticleAdapter adapter;
+	private ArrayList<Article> items;
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -31,8 +40,10 @@ public class ArticlesList extends ListActivity {
 			droidDB = new NewsDroidDB(this);
 			droidDB.open();
 			setContentView(R.layout.articles_list);
-
 			feed = new Feed();
+			items = new ArrayList<Article>();
+			adapter = new ArticleAdapter(this, R.layout.article_row, items);
+			setListAdapter(adapter);
 
 			if (icicle != null) {
 				feed.feedId = icicle.getLong("feed_id");
@@ -47,8 +58,12 @@ public class ArticlesList extends ListActivity {
 				// droidDB.deleteAricles(feed.feedId); we don't want to delete
 				// all old articles
 				if (feed.feedId != -1) {
+					ProgressDialog dialog = ProgressDialog.show(
+							ArticlesList.this, "", "Loading. Please wait...",
+							true);
 					RSSHandler rh = new RSSHandler();
 					rh.updateArticles(this, feed);
+					dialog.dismiss();
 				}
 			}
 			setTitle(feed.title);
@@ -115,7 +130,6 @@ public class ArticlesList extends ListActivity {
 	}
 
 	private void fillData() {
-		List<String> items = new ArrayList<String>();
 		articles = droidDB.getArticles(feed.feedId);
 		Collections.sort(articles, new Comparator<Article>() {
 			public int compare(Article a1, Article a2) {
@@ -123,12 +137,65 @@ public class ArticlesList extends ListActivity {
 			}
 		});
 
+		items.clear();
 		for (Article article : articles) {
-			items.add(article.title);
+			items.add(article);
+		}
+		adapter.notifyDataSetChanged();
+	}
+
+	private class ArticleAdapter extends ArrayAdapter<Article> {
+
+		private ArrayList<Article> items;
+		private SimpleDateFormat dayformat;
+		private SimpleDateFormat timeformat;
+
+		public ArticleAdapter(Context context, int textViewResourceId,
+				ArrayList<Article> items) {
+			super(context, textViewResourceId, items);
+			this.items = items;
+			dayformat = new SimpleDateFormat("dd.MMM");
+			timeformat = new SimpleDateFormat("HH:mm");
 		}
 
-		ArrayAdapter<String> notes = new ArrayAdapter<String>(this,
-				R.layout.article_row, items);
-		setListAdapter(notes);
+		@Override
+		public View getView(int position, View convertView, ViewGroup parent) {
+			View v = convertView;
+			if (v == null) {
+				LayoutInflater vi = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+				v = vi.inflate(R.layout.article_row, null);
+			}
+			Article a = items.get(position);
+			if (a != null) {
+				TextView title = (TextView) v.findViewById(R.id.title);
+				TextView time = (TextView) v.findViewById(R.id.time);
+				title.setText(a.title);
+				time.setText(generateTimeString(a.date));
+			}
+			return v;
+		}
+
+		private String generateTimeString(Date date) {
+			String formattedDate;
+			Date now = new Date(); // just compare the day, not the time
+			now.setHours(0);
+			now.setMinutes(0);
+			now.setSeconds(0);
+			long ms = now.getTime();
+			now.setTime(ms - ms % 1000);
+
+			Date compDate = (Date) date.clone();
+			compDate.setHours(0);
+			compDate.setMinutes(0);
+			compDate.setSeconds(0);
+
+			if (compDate.before(now)) {
+				formattedDate = dayformat.format(date);
+			} else {
+				formattedDate = timeformat.format(date);
+			}
+
+			return formattedDate;
+		}
 	}
 }
