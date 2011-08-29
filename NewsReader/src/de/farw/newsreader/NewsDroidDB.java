@@ -2,10 +2,9 @@ package de.farw.newsreader;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import android.content.ContentValues;
@@ -22,11 +21,9 @@ public class NewsDroidDB {
 	private SQLiteDatabase db;
 	private Context context;
 	private NewsDroidDBHelper helper;
-	private static SimpleDateFormat dateformat;
 
 	public NewsDroidDB(Context ctx) {
 		context = ctx;
-		dateformat = new SimpleDateFormat("EEE MMM dd HH:mm:ss Z yyyy");
 	}
 
 	public NewsDroidDB open() throws SQLException {
@@ -64,14 +61,16 @@ public class NewsDroidDB {
 		} catch (RuntimeException e) {
 			Log.e("NewsDroid", e.toString());
 		}
+		GregorianCalendar cal = new GregorianCalendar();
+		cal.setTime(date);
+		long epochTime = cal.getTimeInMillis();
 
 		values.put("feed_id", feedId);
 		values.put("title", title);
 		values.put("url", url.toString());
 		values.put("read", 0);
 		values.put("description", description);
-		values.put("date", dateformat.format(date));
-//		values.put("date", date.toString());
+		values.put("date", epochTime);
 		
 		return (db.insert(ARTICLES_TABLE, null, values) > 0);
 	}
@@ -127,8 +126,7 @@ public class NewsDroidDB {
 				article.title = c.getString(2);
 				article.url = new URL(c.getString(3));
 				article.description = c.getString(4);
-//				String datestring = c.getString(5);
-				article.date = dateformat.parse(c.getString(5));
+				article.date = new Date(c.getLong(5));
 				articles.add(article);
 				c.moveToNext();
 			}
@@ -136,8 +134,6 @@ public class NewsDroidDB {
 		} catch (SQLException e) {
 			Log.e("NewsDroid", e.toString());
 		} catch (MalformedURLException e) {
-			Log.e("NewsDroid", e.toString());
-		} catch (ParseException e) {
 			Log.e("NewsDroid", e.toString());
 		}
 		return articles;

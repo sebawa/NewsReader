@@ -40,7 +40,6 @@ public class FeedView extends Activity {
 	    	"<html><body>" + encodeHTML(content) + "<br><br>" +
 	    	"<a href=" + url + ">" + getString(R.string.read_more) +
 	    	"</a></body></html>";
-//	    mWebView.loadUrl(url);
 	    mWebView.loadData(content, "text/html", "utf-8");
 	}
 	
