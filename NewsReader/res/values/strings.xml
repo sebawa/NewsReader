@@ -14,4 +14,5 @@
     <string name="ok">Ok</string>
     <string name="unread">Unread News</string>
     <string name="read_more">More...</string>
+    <string name="menu_read">I know about this...</string>
 </resources>

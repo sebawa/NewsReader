@@ -9,6 +9,7 @@ package de.farw.newsreader;
 
 public final class R {
     public static final class array {
+        public static final int stopwords_de=0x7f040001;
         public static final int stopwords_en=0x7f040000;
     }
     public static final class attr {
@@ -42,6 +43,7 @@ public final class R {
         public static final int invalid_url_content=0x7f05000a;
         public static final int menu_delete=0x7f050002;
         public static final int menu_insert=0x7f050001;
+        public static final int menu_read=0x7f05000e;
         public static final int menu_refresh_articles=0x7f050003;
         public static final int menu_refresh_feeds=0x7f050004;
         public static final int ok=0x7f05000b;

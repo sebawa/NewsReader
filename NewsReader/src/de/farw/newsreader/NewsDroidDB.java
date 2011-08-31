@@ -27,8 +27,12 @@ public class NewsDroidDB {
 	}
 
 	public NewsDroidDB open() throws SQLException {
+		try {
 		helper = new NewsDroidDBHelper(context);
 		db = helper.getWritableDatabase();
+		} catch(RuntimeException e) {
+			Log.e("NewsDroid", e.toString());
+		}
 		return this;
 	}
 
@@ -71,6 +75,7 @@ public class NewsDroidDB {
 		values.put("read", 0);
 		values.put("description", description);
 		values.put("date", epochTime);
+		values.put("known", 0);
 		
 		return (db.insert(ARTICLES_TABLE, null, values) > 0);
 	}
@@ -142,6 +147,33 @@ public class NewsDroidDB {
 	public void setRead(Long articleId) {
 		ContentValues values = new ContentValues();
 		values.put("read", 1);
+		db.update(ARTICLES_TABLE, values, "article_id=" + articleId, null);
+	}
+
+	public ArrayList<String> getDescriptionById(ArrayList<Long> otherArticlesId) {
+		ArrayList<String> descriptions = new ArrayList<String>();
+		String inQuery = otherArticlesId.toString();
+		inQuery = inQuery.replace('[', '(');
+		inQuery = inQuery.replace(']', ')');
+		try {
+			Cursor c = null;
+			c = db.query(ARTICLES_TABLE, new String[] { "description"} , "article_id IN" + inQuery, 
+				null, null, null, null, null);
+			c.moveToFirst();
+			for (int i = 0; i < c.getCount(); ++i) {
+				descriptions.add(c.getString(i));
+				c.moveToNext();
+			}
+			c.close();
+		} catch (SQLException e) {
+			Log.e("NewsDroid", e.toString());
+		}
+		return descriptions;
+	}
+	
+	public void markAsKnown(Long articleId) {
+		ContentValues values = new ContentValues();
+		values.put("known", 1);
 		db.update(ARTICLES_TABLE, values, "article_id=" + articleId, null);
 	}
 }

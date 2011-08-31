@@ -99,6 +99,7 @@ public class ArticlesList extends ListActivity {
 			i.putExtra("url", uri);
 			i.putExtra("description", description);
 			i.putExtra("title", title);
+			i.putExtra("id", articleId);
 			startActivity(i);
 		} catch (Exception e) {
 			Log.e("NewsDroid", e.toString());

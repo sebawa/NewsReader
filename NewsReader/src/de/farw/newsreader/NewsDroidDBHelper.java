@@ -10,10 +10,10 @@ public class NewsDroidDBHelper extends SQLiteOpenHelper {
 		+ "title text not null, url text not null);";
 
 	private static final String CREATE_TABLE_ARTICLES = "create table articles (article_id integer primary key autoincrement, "
-		+ "feed_id int not null, title text not null, url text not null, read integer not null, description text, date integer);";
+		+ "feed_id int not null, title text not null, url text not null, read integer not null, description text, date integer, known integer not null);";
 
 	private static final String DATABASE_NAME = "newdroid";
-	private static final int DATABASE_VERSION = 4;
+	private static final int DATABASE_VERSION = 6;
 
 	public NewsDroidDBHelper(Context ctx) {
 		super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
@@ -31,7 +31,8 @@ public class NewsDroidDBHelper extends SQLiteOpenHelper {
 		Log.w(NewsDroidDB.class.getName(),
 				"Upgrading database from version " + oldVersion + " to "
 						+ newVersion + ", which will destroy all old data");
-		database.execSQL("DROP TABLE IF EXISTS feeds, articles");
+		database.execSQL("DROP TABLE feeds");
+		database.execSQL("DROP TABLE articles");
 		onCreate(database);
 	}
 }
