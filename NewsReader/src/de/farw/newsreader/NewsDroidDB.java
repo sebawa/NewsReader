@@ -53,28 +53,39 @@ public class NewsDroidDB {
 
 	public boolean insertArticle(Long feedId, String title, URL url, String description, Date date) {
 		ContentValues values = new ContentValues();
+		long insertTime = 0;
+		if (date != null) {
+			GregorianCalendar cal = new GregorianCalendar();
+			cal.setTime(date);
+			insertTime = cal.getTimeInMillis();
+			values.put("date", insertTime);
+		}
 
 		try {
-			Cursor c = db.query(ARTICLES_TABLE, // check if feed is already in database
-					new String[] { "title", "url" }, "url=\"" + url.toString() + "\"",
+			Cursor c = db.query(ARTICLES_TABLE, // check if article is already in database
+					new String[] { "feed_id", "date" }, "title=\"" + title + "\"",
 					null, null, null, null);
 			int count = c.getCount();
-			c.close();
-			if (count >= 1)
-				return true;
+			if (count >= 1) {
+				c.moveToFirst();
+				long feed_id = c.getLong(0);
+				long oldDate = c.getLong(1);
+				c.close();
+				if (oldDate < insertTime)
+					db.delete(ARTICLES_TABLE, "feed_id=" + feed_id, null);
+				else
+					return true;
+			} else
+				c.close();
 		} catch (RuntimeException e) {
 			Log.e("NewsDroid", e.toString());
 		}
-		GregorianCalendar cal = new GregorianCalendar();
-		cal.setTime(date);
-		long epochTime = cal.getTimeInMillis();
 
 		values.put("feed_id", feedId);
 		values.put("title", title);
 		values.put("url", url.toString());
 		values.put("read", 0);
 		values.put("description", description);
-		values.put("date", epochTime);
 		values.put("known", 0);
 		
 		return (db.insert(ARTICLES_TABLE, null, values) > 0);
@@ -145,8 +156,9 @@ public class NewsDroidDB {
 	}
 
 	public void setRead(Long articleId) {
+		GregorianCalendar cal = new GregorianCalendar();
 		ContentValues values = new ContentValues();
-		values.put("read", 1);
+		values.put("read", cal.getTimeInMillis());
 		db.update(ARTICLES_TABLE, values, "article_id=" + articleId, null);
 	}
 
@@ -161,7 +173,7 @@ public class NewsDroidDB {
 				null, null, null, null, null);
 			c.moveToFirst();
 			for (int i = 0; i < c.getCount(); ++i) {
-				descriptions.add(c.getString(i));
+				descriptions.add(c.getString(i)); // TODO: check that, might be wrong
 				c.moveToNext();
 			}
 			c.close();
@@ -172,8 +184,24 @@ public class NewsDroidDB {
 	}
 	
 	public void markAsKnown(Long articleId) {
+		GregorianCalendar cal = new GregorianCalendar();
+		cal.add(GregorianCalendar.DATE, -4);
+		long time = cal.getTimeInMillis();
+		ArrayList<Long> idsOfRead = new ArrayList<Long>();
+		try {
+			Cursor c = null;
+			c = db.query(ARTICLES_TABLE, new String[] {"article_id"}, "read>" + time, null, null, null, null);
+			c.moveToFirst();
+			for (int i = 0; i < c.getCount(); ++i) {
+				idsOfRead.add(c.getLong(0));
+				c.moveToNext();
+			}
+			c.close();
+		} catch (SQLException e) {
+			Log.e("NewsDroid", e.toString());
+		}
 		ContentValues values = new ContentValues();
-		values.put("known", 1);
+		values.put("known", idsOfRead.toString());
 		db.update(ARTICLES_TABLE, values, "article_id=" + articleId, null);
 	}
 }

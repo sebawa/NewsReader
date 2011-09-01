@@ -14,6 +14,8 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -32,6 +34,7 @@ public class ArticlesList extends ListActivity {
 	private NewsDroidDB droidDB;
 	private ArticleAdapter adapter;
 	private ArrayList<Article> items;
+	private ProgressDialog dialog;
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -55,15 +58,11 @@ public class ArticlesList extends ListActivity {
 				feed.title = extras.getString("title");
 				feed.url = new URL(extras.getString("url"));
 
-				// droidDB.deleteAricles(feed.feedId); we don't want to delete
-				// all old articles
 				if (feed.feedId != -1) {
-					ProgressDialog dialog = ProgressDialog.show(
-							ArticlesList.this, "", "Loading. Please wait...",
-							true);
 					RSSHandler rh = new RSSHandler();
-					rh.updateArticles(this, feed);
-					dialog.dismiss();
+					dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog), true, false);
+					RSSUpdateThread updateThread = new RSSUpdateThread(rh, this.getApplicationContext());
+					updateThread.start();
 				}
 			}
 			setTitle(feed.title);
@@ -121,7 +120,9 @@ public class ArticlesList extends ListActivity {
 		case ACTIVITY_REFRESH:
 			if (feed.feedId != -1) {
 				RSSHandler rh = new RSSHandler();
-				rh.updateArticles(this, feed);
+				dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog));
+				RSSUpdateThread updateThread = new RSSUpdateThread(rh, this.getApplicationContext());
+				updateThread.start();
 			}
 			fillData();
 			break;
@@ -198,5 +199,27 @@ public class ArticlesList extends ListActivity {
 
 			return formattedDate;
 		}
+	}
+	
+	private class RSSUpdateThread extends Thread {
+		private RSSHandler rsshandler;
+		private Context ctx;
+		public RSSUpdateThread(RSSHandler h, Context c) {
+			rsshandler = h;
+			ctx = c;
+		}
+		
+		@Override
+		public void run() {
+			rsshandler.updateArticles(ctx, feed);
+			handler.sendEmptyMessage(0);
+		}
+		
+		private Handler handler = new Handler() {
+			@Override
+			public void handleMessage(Message msg) {
+				dialog.dismiss();
+			}
+		};
 	}
 }

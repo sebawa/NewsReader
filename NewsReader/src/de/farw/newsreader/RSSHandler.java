@@ -27,6 +27,7 @@ public class RSSHandler extends DefaultHandler {
 	private boolean inLink = false;
 	private boolean inDescription = false;
 	private boolean inDate = false;
+	private boolean inOldDate = false;
 
 	// Feed and Article objects to use for temporary storage
 	private Article currentArticle = new Article();
@@ -47,14 +48,15 @@ public class RSSHandler extends DefaultHandler {
 
 	private NewsDroidDB droidDB = null;
 	private boolean noDate = false;
-	
+
 	public RSSHandler() {
 		currentFeed.title = "";
 		currentArticle.title = "";
 		currentArticle.description = "";
 	}
 
-	public void startElement(String uri, String name, String qName, Attributes atts) {
+	public void startElement(String uri, String name, String qName,
+			Attributes atts) {
 		if (name.trim().equals("title"))
 			inTitle = true;
 		else if (name.trim().equals("item"))
@@ -65,6 +67,8 @@ public class RSSHandler extends DefaultHandler {
 			inDescription = true;
 		else if (name.trim().equals("pubDate"))
 			inDate = true;
+		else if (name.trim().equals("date"))
+			inOldDate = true;
 	}
 
 	public void endElement(String uri, String name, String qName)
@@ -79,9 +83,12 @@ public class RSSHandler extends DefaultHandler {
 			inDescription = false;
 		else if (name.trim().equals("pubDate"))
 			inDate = false;
+		else if (name.trim().equals("date"))
+			inOldDate = false;
 
 		// Check if looking for feed, and if feed is complete
-		if (targetFlag == TARGET_FEED && currentFeed.url != null && currentFeed.title != "") {
+		if (targetFlag == TARGET_FEED && currentFeed.url != null
+				&& currentFeed.title != "") {
 
 			// We know everything we need to know, so insert feed and exit
 			droidDB.insertFeed(currentFeed.title, currentFeed.url);
@@ -90,9 +97,13 @@ public class RSSHandler extends DefaultHandler {
 		}
 
 		// Check if looking for article, and if article is complete
-		if (targetFlag == TARGET_ARTICLES && currentArticle.url != null && currentArticle.title != "" && currentArticle.description != ""
+		if (targetFlag == TARGET_ARTICLES && currentArticle.url != null
+				&& currentArticle.title != ""
+				&& currentArticle.description != ""
 				&& (noDate || currentArticle.date != null)) {
-			droidDB.insertArticle(currentFeed.feedId, currentArticle.title, currentArticle.url, currentArticle.description, currentArticle.date);
+			droidDB.insertArticle(currentFeed.feedId, currentArticle.title,
+					currentArticle.url, currentArticle.description,
+					currentArticle.date);
 			currentArticle.title = "";
 			currentArticle.url = null;
 			currentArticle.description = "";
@@ -124,16 +135,31 @@ public class RSSHandler extends DefaultHandler {
 					currentArticle.title += chars;
 				if (inDescription)
 					currentArticle.description += chars;
-				if (inDate) { // date formated like: Tue, 23 Aug 2011 12:56:35 +0200
+				if (inDate) { // date formated like: Tue, 23 Aug 2011 12:56:35
+					// +0200
 					try {
-						currentArticle.date = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z").parse(chars);
+						currentArticle.date = new SimpleDateFormat(
+								"EEE, dd MMM yyyy HH:mm:ss Z").parse(chars);
 					} catch (ParseException e) {
 						try {
-							currentArticle.date = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z").parse(chars);
+							currentArticle.date = new SimpleDateFormat(
+									"EEE, dd MMM yyyy HH:mm:ss z").parse(chars);
 						} catch (ParseException f) {
 							currentArticle.date = null;
 							noDate = true;
 						}
+					}
+				}
+				if (inOldDate) { // date formated like: 2011-08-31T18:12:03+00:00
+					try {
+						final int splitPoint = chars.length()-3;
+						String correctedDate = chars.substring(0, splitPoint);
+						correctedDate += chars.substring(splitPoint+1);
+						currentArticle.date = new SimpleDateFormat(
+								"yyyy-MM-dd'T'hh:mm:ssZ").parse(correctedDate);
+					} catch (ParseException e) {
+						currentArticle.date = null;
+						noDate = true;
 					}
 				}
 			}
@@ -155,8 +181,8 @@ public class RSSHandler extends DefaultHandler {
 			XMLReader xr = sp.getXMLReader();
 			xr.setContentHandler(this);
 			xr.parse(new InputSource(url.openStream()));
-//			droidDB.close();
-			
+			// droidDB.close();
+
 		} catch (IOException e) {
 			Log.e("NewsDroid", e.toString());
 		} catch (SAXException e) {
@@ -178,15 +204,17 @@ public class RSSHandler extends DefaultHandler {
 			XMLReader xr = sp.getXMLReader();
 			xr.setContentHandler(this);
 			xr.parse(new InputSource(currentFeed.url.openStream()));
-//			droidDB.close();
-			
+			// droidDB.close();
+
 		} catch (IOException e) {
 			Log.e("NewsDroid", e.toString());
 		} catch (SAXException e) {
 			Log.e("NewsDroid", e.toString());
 		} catch (ParserConfigurationException e) {
 			Log.e("NewsDroid", e.toString());
-		} 
+		} catch (RuntimeException e) {
+			Log.e("NewsDroid", e.toString());
+		}
 	}
 
 }

@@ -41,6 +41,7 @@ public final class R {
         public static final int button_ok=0x7f050005;
         public static final int invalid_url=0x7f050009;
         public static final int invalid_url_content=0x7f05000a;
+        public static final int loading_dialog=0x7f05000f;
         public static final int menu_delete=0x7f050002;
         public static final int menu_insert=0x7f050001;
         public static final int menu_read=0x7f05000e;

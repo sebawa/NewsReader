@@ -15,4 +15,5 @@
     <string name="unread">Unread News</string>
     <string name="read_more">More...</string>
     <string name="menu_read">I know about this...</string>
+    <string name="loading_dialog">Loading. Please wait...</string>
 </resources>

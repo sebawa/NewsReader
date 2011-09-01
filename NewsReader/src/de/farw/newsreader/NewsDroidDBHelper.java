@@ -10,10 +10,10 @@ public class NewsDroidDBHelper extends SQLiteOpenHelper {
 		+ "title text not null, url text not null);";
 
 	private static final String CREATE_TABLE_ARTICLES = "create table articles (article_id integer primary key autoincrement, "
-		+ "feed_id int not null, title text not null, url text not null, read integer not null, description text, date integer, known integer not null);";
+		+ "feed_id int not null, title text not null, url text not null, read integer not null, description text, date integer, known string);";
 
 	private static final String DATABASE_NAME = "newdroid";
-	private static final int DATABASE_VERSION = 6;
+	private static final int DATABASE_VERSION = 7;
 
 	public NewsDroidDBHelper(Context ctx) {
 		super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
