@@ -63,7 +63,7 @@ public class NewsDroidDB {
 
 		try {
 			Cursor c = db.query(ARTICLES_TABLE, // check if article is already in database
-					new String[] { "feed_id", "date" }, "title=\"" + title + "\"",
+					new String[] { "feed_id", "date" }, "url=\"" + url + "\"",
 					null, null, null, null);
 			int count = c.getCount();
 			if (count >= 1) {
@@ -95,7 +95,7 @@ public class NewsDroidDB {
 		return (db.delete(ARTICLES_TABLE, "feed_id=" + feedId.toString(), null) > 0);
 	}
 
-	public List<Feed> getFeeds() {
+	public ArrayList<Feed> getFeeds() {
 		ArrayList<Feed> feeds = new ArrayList<Feed>();
 		try {
 			Cursor c = db.query(FEEDS_TABLE, new String[] { "feed_id", "title",

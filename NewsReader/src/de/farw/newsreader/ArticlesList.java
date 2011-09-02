@@ -14,8 +14,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -59,16 +57,19 @@ public class ArticlesList extends ListActivity {
 				feed.url = new URL(extras.getString("url"));
 
 				if (feed.feedId != -1) {
-					RSSHandler rh = new RSSHandler();
-					dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog), true, false);
-					RSSUpdateThread updateThread = new RSSUpdateThread(rh, this.getApplicationContext());
+					// RSSHandler rh = new RSSHandler();
+					dialog = ProgressDialog.show(this, "",
+							getString(R.string.loading_dialog), true, false);
+					// RSSUpdateThread updateThread = new RSSUpdateThread(rh,
+					// this.getApplicationContext());
+					RSSHandler updateThread = new RSSHandler(feed, this
+							.getApplicationContext(), dialog);
 					updateThread.start();
 				}
 			}
 			setTitle(feed.title);
 
 			fillData();
-
 		} catch (MalformedURLException e) {
 			Log.e("NewsDroid", e.toString());
 		}
@@ -119,9 +120,16 @@ public class ArticlesList extends ListActivity {
 		switch (item.getItemId()) {
 		case ACTIVITY_REFRESH:
 			if (feed.feedId != -1) {
-				RSSHandler rh = new RSSHandler();
-				dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog));
-				RSSUpdateThread updateThread = new RSSUpdateThread(rh, this.getApplicationContext());
+				dialog = ProgressDialog.show(this, "",
+						getString(R.string.loading_dialog));
+				RSSHandler updateThread = new RSSHandler(feed, this
+						.getApplicationContext(), dialog);
+				updateThread.start();
+			} else {
+				ArrayList<Feed> feeds = droidDB.getFeeds();
+				dialog = ProgressDialog.show(this, "",
+						getString(R.string.loading_dialog));
+				RSSHandler updateThread = new RSSHandler(feeds, this, dialog);
 				updateThread.start();
 			}
 			fillData();
@@ -200,26 +208,26 @@ public class ArticlesList extends ListActivity {
 			return formattedDate;
 		}
 	}
-	
-	private class RSSUpdateThread extends Thread {
-		private RSSHandler rsshandler;
-		private Context ctx;
-		public RSSUpdateThread(RSSHandler h, Context c) {
-			rsshandler = h;
-			ctx = c;
-		}
-		
-		@Override
-		public void run() {
-			rsshandler.updateArticles(ctx, feed);
-			handler.sendEmptyMessage(0);
-		}
-		
-		private Handler handler = new Handler() {
-			@Override
-			public void handleMessage(Message msg) {
-				dialog.dismiss();
-			}
-		};
-	}
+
+	// private class RSSUpdateThread extends Thread {
+	// private RSSHandler rsshandler;
+	// private Context ctx;
+	// public RSSUpdateThread(RSSHandler h, Context c) {
+	// rsshandler = h;
+	// ctx = c;
+	// }
+	//		
+	// @Override
+	// public void run() {
+	// rsshandler.updateArticles(ctx, feed);
+	// handler.sendEmptyMessage(0);
+	// }
+	//		
+	// private Handler handler = new Handler() {
+	// @Override
+	// public void handleMessage(Message msg) {
+	// dialog.dismiss();
+	// }
+	// };
+	// }
 }

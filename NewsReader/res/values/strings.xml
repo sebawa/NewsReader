@@ -16,4 +16,5 @@
     <string name="read_more">More...</string>
     <string name="menu_read">I know about this...</string>
     <string name="loading_dialog">Loading. Please wait...</string>
+    <string name="no_internet">No internet connection available</string>
 </resources>

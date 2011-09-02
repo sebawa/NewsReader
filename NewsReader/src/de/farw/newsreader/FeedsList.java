@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,9 +19,11 @@ public class FeedsList extends ListActivity {
 	private static final int ACTIVITY_DELETE = 1;
 	private static final int ACTIVITY_INSERT = 2;
 	private static final int ACTIVITY_VIEW = 3;
+	private static final int ACTIVITY_UPDATE = 4;
 
 	private NewsDroidDB droidDB;
-	private List<Feed> feeds;
+	private ArrayList<Feed> feeds;
+	private ProgressDialog dialog;
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -50,19 +53,27 @@ public class FeedsList extends ListActivity {
 				R.string.menu_insert);
 		menu.add(0, ACTIVITY_DELETE, android.view.Menu.NONE,
 				R.string.menu_delete);
+		menu.add(0, ACTIVITY_UPDATE, android.view.Menu.NONE,
+				R.string.menu_refresh_articles);
 		return true;
 	}
 
 	@Override
-	public boolean onMenuItemSelected(int featureId, MenuItem item) { 
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		super.onMenuItemSelected(featureId, item);
 		switch (item.getItemId()) {
 		case ACTIVITY_INSERT:
 			createFeed();
 			break;
 		case ACTIVITY_DELETE:
-			droidDB.deleteFeed(feeds.get((int) getSelectedItemId()-1).feedId); 
+			droidDB.deleteFeed(feeds.get((int) getSelectedItemId() - 1).feedId);
 			fillData();
+			break;
+		case ACTIVITY_UPDATE:
+			feeds = droidDB.getFeeds();
+			dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog));
+			RSSHandler updateThread = new RSSHandler(feeds, this, dialog);
+			updateThread.start();
 			break;
 		}
 
@@ -106,7 +117,8 @@ public class FeedsList extends ListActivity {
 			items.add(feed.title);
 		}
 
-		ArrayAdapter<String> notes = new ArrayAdapter<String>(this, R.layout.feeds_row, items);
+		ArrayAdapter<String> notes = new ArrayAdapter<String>(this,
+				R.layout.feeds_row, items);
 		setListAdapter(notes);
 	}
 

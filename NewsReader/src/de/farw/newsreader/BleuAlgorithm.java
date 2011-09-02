@@ -13,21 +13,23 @@ public class BleuAlgorithm {
 	public class BleuData {
 		public double bleuValue;
 		public HashSet<String> matchingNGrams;
-		
+
 		public BleuData() {
 			matchingNGrams = new HashSet<String>();
 		}
-		
-//		public BleuData(double val, HashSet<String> ngrams) {
-//			bleuValue = val;
-//			matchingNGrams = ngrams;
-//		}
+
+		// public BleuData(double val, HashSet<String> ngrams) {
+		// bleuValue = val;
+		// matchingNGrams = ngrams;
+		// }
 	}
-	
+
 	private HashSet<String> stopWords;
-	private static HashMap<String, HashSet<Long>> index = null; // TODO: serialize index
+	private static HashMap<String, HashSet<Long>> index = null; // TODO:
+	// serialize
+	// index
 	private static HashMap<Long, String> readyArticles = null;
-	private	NewsDroidDB db;
+	private NewsDroidDB db;
 
 	public BleuAlgorithm(Context ctx) {
 		db = new NewsDroidDB(ctx);
@@ -40,7 +42,7 @@ public class BleuAlgorithm {
 		String[] stopWordsData = res.getStringArray(R.array.stopwords_en);
 		stopWords = new HashSet<String>(Arrays.asList(stopWordsData));
 	}
-	
+
 	public BleuData scanArticle(String article, long id) { // TODO: test it!
 		HashSet<Long> otherArticlesId = new HashSet<Long>();
 		if (!readyArticles.containsKey(id)) {
@@ -73,27 +75,28 @@ public class BleuAlgorithm {
 			String temp = otherArticles.get(i);
 			readyArticles.put(oAIList.get(i), preprocessText(temp));
 		}
-		
+
 		BleuData bd = new BleuData();
 		HashSet<String> matching = new HashSet<String>();
 		for (Long l : otherArticlesId) {
 			matching.clear();
-			double bleuVal = calculateBLEU(readyArticle, readyArticles.get(l), matching);
+			double bleuVal = calculateBLEU(readyArticle, readyArticles.get(l),
+					matching);
 			if (bleuVal > bd.bleuValue) {
 				bd.bleuValue = bleuVal;
 				bd.matchingNGrams = new HashSet<String>(matching);
 			}
 		}
-		
+
 		return bd;
 	}
-	
+
 	private double calculateBLEU(String h, String t, HashSet<String> matching) {
 		double s_bleu = 0.0;
 		String[] h_words = h.split(" ");
 		String[] t_words = t.split(" ");
 
-		for (int i = 1; i <= 4; ++i) { // TODO: chang to i=2
+		for (int i = 2; i <= 4; ++i) { // TODO: chang to i=2
 			HashSet<String> ng_h = new HashSet<String>(); // i-grams of h
 			HashSet<String> ng_t = new HashSet<String>();
 			for (int j = 0; j <= h_words.length - i; ++j) {
@@ -119,13 +122,20 @@ public class BleuAlgorithm {
 			if (i > from)
 				out += '_';
 			out += words[i];
-//			out += '_' + words[from];
+			// out += '_' + words[from];
 		}
 		return out;
 	}
-	
+
 	private String preprocessText(String in) {
 		String text = new String(in);
+		// erase HTML content
+		/*
+		text = text
+				.replaceAll(
+						"</?\\w+((\\s+\\w+(\\s*=\\s*(?:\".*?\"|'.*?'|[^'\">\\s]+))?)+\\s*|\\s*)/?>|&[\\p{Alnum}]*?;",
+						" ");
+		*/
 		text = text.replaceAll("<([^<]*?)>", ""); // erase HTML content
 		text = text.toLowerCase(Locale.ENGLISH);
 		text = text.replaceAll("'([s]{0,1})", "");
@@ -138,7 +148,7 @@ public class BleuAlgorithm {
 				.asList(t_words));
 		t_wordsArrayList.removeAll(stopWords);
 		t_words = t_wordsArrayList.toArray(new String[0]);
-		
+
 		int counter = 0;
 		text = "";
 		for (String word : t_words) {
@@ -146,7 +156,7 @@ public class BleuAlgorithm {
 			if (++counter < t_words.length)
 				text += ' ';
 		}
-		
+
 		return text;
 	}
 }

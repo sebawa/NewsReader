@@ -45,8 +45,9 @@ public class URLEditor extends Activity  {
 
     protected void okClicked() {
     	try {
-    		RSSHandler rh = new RSSHandler();
-    		rh.createFeed(this, new URL(mText.getText().toString()));
+    		RSSHandler rh = new RSSHandler(this.getApplicationContext());
+    		rh.createFeed(new URL(mText.getText().toString()));
+//    		rh.createFeed(this, new URL(mText.getText().toString()));
     		finish();
     	} catch (MalformedURLException e) {
 //    		showAlert("Invalid URL", "The URL you have entered is invalid.", "Ok", false);

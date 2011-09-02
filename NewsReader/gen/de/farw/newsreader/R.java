@@ -47,6 +47,7 @@ public final class R {
         public static final int menu_read=0x7f05000e;
         public static final int menu_refresh_articles=0x7f050003;
         public static final int menu_refresh_feeds=0x7f050004;
+        public static final int no_internet=0x7f050010;
         public static final int ok=0x7f05000b;
         public static final int read_more=0x7f05000d;
         public static final int unread=0x7f05000c;
