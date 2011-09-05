@@ -51,6 +51,7 @@ public class RSSHandler extends Thread {
 	public RSSHandler(Context c) {
 		ctx = c;
 		feed = null;
+		loader = new RSSLoader();
 	}
 	
 	@Override

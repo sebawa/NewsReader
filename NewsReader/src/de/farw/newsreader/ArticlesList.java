@@ -57,11 +57,8 @@ public class ArticlesList extends ListActivity {
 				feed.url = new URL(extras.getString("url"));
 
 				if (feed.feedId != -1) {
-					// RSSHandler rh = new RSSHandler();
 					dialog = ProgressDialog.show(this, "",
 							getString(R.string.loading_dialog), true, false);
-					// RSSUpdateThread updateThread = new RSSUpdateThread(rh,
-					// this.getApplicationContext());
 					RSSHandler updateThread = new RSSHandler(feed, this
 							.getApplicationContext(), dialog);
 					updateThread.start();
@@ -73,7 +70,6 @@ public class ArticlesList extends ListActivity {
 		} catch (MalformedURLException e) {
 			Log.e("NewsDroid", e.toString());
 		}
-
 	}
 
 	@Override
