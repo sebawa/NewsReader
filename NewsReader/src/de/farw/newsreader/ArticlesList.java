@@ -204,26 +204,4 @@ public class ArticlesList extends ListActivity {
 			return formattedDate;
 		}
 	}
-
-	// private class RSSUpdateThread extends Thread {
-	// private RSSHandler rsshandler;
-	// private Context ctx;
-	// public RSSUpdateThread(RSSHandler h, Context c) {
-	// rsshandler = h;
-	// ctx = c;
-	// }
-	//		
-	// @Override
-	// public void run() {
-	// rsshandler.updateArticles(ctx, feed);
-	// handler.sendEmptyMessage(0);
-	// }
-	//		
-	// private Handler handler = new Handler() {
-	// @Override
-	// public void handleMessage(Message msg) {
-	// dialog.dismiss();
-	// }
-	// };
-	// }
 }

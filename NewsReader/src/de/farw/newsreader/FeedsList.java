@@ -44,6 +44,7 @@ public class FeedsList extends ListActivity {
 		if (droidDB != null) {
 			droidDB.close();
 		}
+		BleuAlgorithm.saveBleuData(this);
 	}
 
 	@Override

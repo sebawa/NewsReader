@@ -21,8 +21,12 @@ public class NewsDroidDB {
 	private SQLiteDatabase db;
 	private Context context;
 	private NewsDroidDBHelper helper;
+	private long time;
 
 	public NewsDroidDB(Context ctx) {
+		GregorianCalendar cal = new GregorianCalendar();
+		cal.add(GregorianCalendar.DATE, -4);
+		time = cal.getTimeInMillis();
 		context = ctx;
 	}
 
@@ -173,7 +177,7 @@ public class NewsDroidDB {
 				null, null, null, null, null);
 			c.moveToFirst();
 			for (int i = 0; i < c.getCount(); ++i) {
-				descriptions.add(c.getString(i)); // TODO: check that, might be wrong
+				descriptions.add(c.getString(0)); // TODO: check that, might be wrong
 				c.moveToNext();
 			}
 			c.close();
@@ -184,9 +188,6 @@ public class NewsDroidDB {
 	}
 	
 	public void markAsKnown(Long articleId) {
-		GregorianCalendar cal = new GregorianCalendar();
-		cal.add(GregorianCalendar.DATE, -4);
-		long time = cal.getTimeInMillis();
 		ArrayList<Long> idsOfRead = new ArrayList<Long>();
 		try {
 			Cursor c = null;
@@ -203,5 +204,22 @@ public class NewsDroidDB {
 		ContentValues values = new ContentValues();
 		values.put("known", idsOfRead.toString());
 		db.update(ARTICLES_TABLE, values, "article_id=" + articleId, null);
+	}
+	
+//	public long removeOldArticles() {
+//		db.delete(ARTICLES_TABLE, "read<" + time, null);
+//	}
+	
+	public int getArticleRead(long articleId) {
+		Cursor c = db.query(ARTICLES_TABLE, new String[] {"known"}, "article_id="+articleId, null, null, null, null);
+		if (c.getCount() == 0)
+			return 0;
+		
+		c.moveToFirst();
+		String known = c.getString(0);
+		if (known == "0")
+			return 0;
+		else
+			return 1;
 	}
 }
