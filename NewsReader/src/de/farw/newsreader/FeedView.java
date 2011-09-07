@@ -99,6 +99,7 @@ public class FeedView extends Activity {
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
 		final int imageSize = (int) (metrics.widthPixels * 0.95);
 
+		in = in.replaceAll("\n", " ");
 		// this pattern should match _all_ HTML tags
 		Pattern pTag = Pattern
 				.compile("</?\\w+((\\s+\\w+(\\s*=\\s*(?:\".*?\"|'.*?'|[^'\">\\s]+))?)+\\s*|\\s*)/?>|&[\\p{Alnum}]*?;");

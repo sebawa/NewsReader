@@ -70,16 +70,16 @@ public class NewsDroidDB {
 		try {
 			Cursor c = db.query(
 					ARTICLES_TABLE, // check if article is already in database
-					new String[] { "feed_id", "date" }, "url=\"" + url + "\"",
+					new String[] { "article_id", "date" }, "url=\"" + url + "\"",
 					null, null, null, null);
 			int count = c.getCount();
 			if (count >= 1) {
 				c.moveToFirst();
-				long feed_id = c.getLong(0);
+				long articles_id = c.getLong(0);
 				long oldDate = c.getLong(1);
 				c.close();
 				if (oldDate < insertTime)
-					db.delete(ARTICLES_TABLE, "feed_id=" + feed_id, null);
+					db.delete(ARTICLES_TABLE, "article_id=" + articles_id, null);
 				else
 					return true;
 			} else
@@ -179,9 +179,9 @@ public class NewsDroidDB {
 			c = db.query(ARTICLES_TABLE, new String[] { "description" },
 					"article_id IN" + inQuery, null, null, null, null, null);
 			c.moveToFirst();
+			assert(c.getCount() == otherArticlesId.size());
 			for (int i = 0; i < c.getCount(); ++i) {
-				descriptions.add(c.getString(0)); // TODO: check that, might be
-				// wrong
+				descriptions.add(c.getString(0)); 
 				c.moveToNext();
 			}
 			c.close();
@@ -231,14 +231,19 @@ public class NewsDroidDB {
 	public int getArticleRead(long articleId) {
 		Cursor c = db.query(ARTICLES_TABLE, new String[] { "known" },
 				"article_id=" + articleId, null, null, null, null);
-		if (c.getCount() == 0)
+		if (c.getCount() == 0) {
+			c.close();
 			return 0;
+		}
 
 		c.moveToFirst();
 		String known = c.getString(0);
-		if (known == "0")
+		c.close();
+		
+		if (known.equals("0")) {
 			return 0;
-		else
-			return 1;
+		}
+		
+		return 1;
 	}
 }

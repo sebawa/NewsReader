@@ -23,6 +23,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Message;
+import android.text.Html;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -173,6 +174,7 @@ public class RSSHandler extends Thread {
 					&& currentArticle.title != ""
 					&& currentArticle.description != ""
 					&& (noDate || currentArticle.date != null)) {
+				currentArticle.title = Html.fromHtml(currentArticle.title).toString();
 				droidDB.insertArticle(currentFeed.feedId, currentArticle.title,
 						currentArticle.url, currentArticle.description,
 						currentArticle.date);

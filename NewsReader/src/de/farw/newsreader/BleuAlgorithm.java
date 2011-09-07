@@ -1,10 +1,8 @@
 package de.farw.newsreader;
 
-import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -38,6 +36,7 @@ public class BleuAlgorithm {
 	private static OutputStreamWriter osw = null;
 	private NewsDroidDB db;
 
+	@SuppressWarnings("unchecked")
 	public BleuAlgorithm(Context ctx) {
 		db = new NewsDroidDB(ctx);
 		db.open();
@@ -60,7 +59,8 @@ public class BleuAlgorithm {
 				ObjectInputStream is = new ObjectInputStream(fis);
 				index = (HashMap<String, HashSet<Long>>) is.readObject();
 				is.close();
-				HashSet<Long> oldArticles = db.removeOldArticles();
+//				HashSet<Long> oldArticles = db.removeOldArticles();
+				HashSet<Long> oldArticles = new HashSet<Long>(); // TODO: remove after debugging
 			    for (String key: index.keySet()) {
 			        HashSet<Long> indices = index.get(key);
 			        indices.removeAll(oldArticles);
@@ -140,7 +140,8 @@ public class BleuAlgorithm {
 		
 		// for testing only
 		try {
-		    osw.write(String.valueOf(bd.bleuValue) + ' ' + db.getArticleRead(id));
+			int known = db.getArticleRead(id);
+		    osw.write(String.valueOf(bd.bleuValue) + ' ' + known + '\n');
 		    osw.flush();
 		} catch (IOException e) {
 			Log.e("NewsDroid", e.toString());
