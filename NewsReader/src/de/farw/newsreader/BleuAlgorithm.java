@@ -12,9 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -36,7 +34,6 @@ public class BleuAlgorithm {
 	private static String indexFile = "serializedIndex";
 	private static String articlesFile = "serializedArticles";
 	private static BufferedWriter bleuOut = null;
-	private static long lowestId = 0;
 	private NewsDroidDB db;
 
 	public BleuAlgorithm(Context ctx) {
@@ -51,9 +48,7 @@ public class BleuAlgorithm {
 			try {
 				bleuOut = new BufferedWriter(new FileWriter("bleu_values"));
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				Log.e("NewsDroid", e.toString());
-//				e.printStackTrace();
 			}
 		}
 		if (index == null) {
@@ -62,7 +57,13 @@ public class BleuAlgorithm {
 				ObjectInputStream is = new ObjectInputStream(fis);
 				index = (HashMap<String, HashSet<Long>>) is.readObject();
 				is.close();
-//				lowestId = db.removeOldArticles();
+				HashSet<Long> oldArticles = db.removeOldArticles();
+			    for (String key: index.keySet()) {
+			        HashSet<Long> indices = index.get(key);
+			        indices.removeAll(oldArticles);
+			        if (!indices.isEmpty())
+			        	index.put(key, indices);
+			    }
 			} catch (IOException e) {
 				index = new HashMap<String, HashSet<Long>>();
 			} catch (ClassNotFoundException e) {

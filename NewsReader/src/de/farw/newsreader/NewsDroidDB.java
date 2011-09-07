@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
 
 import android.content.ContentValues;
@@ -32,9 +33,9 @@ public class NewsDroidDB {
 
 	public NewsDroidDB open() throws SQLException {
 		try {
-		helper = new NewsDroidDBHelper(context);
-		db = helper.getWritableDatabase();
-		} catch(RuntimeException e) {
+			helper = new NewsDroidDBHelper(context);
+			db = helper.getWritableDatabase();
+		} catch (RuntimeException e) {
 			Log.e("NewsDroid", e.toString());
 		}
 		return this;
@@ -55,7 +56,8 @@ public class NewsDroidDB {
 		return (db.delete(FEEDS_TABLE, "feed_id=" + feedId.toString(), null) > 0);
 	}
 
-	public boolean insertArticle(Long feedId, String title, URL url, String description, Date date) {
+	public boolean insertArticle(Long feedId, String title, URL url,
+			String description, Date date) {
 		ContentValues values = new ContentValues();
 		long insertTime = 0;
 		if (date != null) {
@@ -66,7 +68,8 @@ public class NewsDroidDB {
 		}
 
 		try {
-			Cursor c = db.query(ARTICLES_TABLE, // check if article is already in database
+			Cursor c = db.query(
+					ARTICLES_TABLE, // check if article is already in database
 					new String[] { "feed_id", "date" }, "url=\"" + url + "\"",
 					null, null, null, null);
 			int count = c.getCount();
@@ -91,7 +94,7 @@ public class NewsDroidDB {
 		values.put("read", 0);
 		values.put("description", description);
 		values.put("known", 0);
-		
+
 		return (db.insert(ARTICLES_TABLE, null, values) > 0);
 	}
 
@@ -130,12 +133,12 @@ public class NewsDroidDB {
 			Cursor c = null;
 			if (feedId >= 0) {
 				c = db.query(ARTICLES_TABLE, new String[] { "article_id",
-						"feed_id", "title", "url", "description", "date"}, "feed_id="
-						+ feedId.toString(), null, null, null, null);
+						"feed_id", "title", "url", "description", "date" },
+						"feed_id=" + feedId.toString(), null, null, null, null);
 			} else {
 				c = db.query(ARTICLES_TABLE, new String[] { "article_id",
-						"feed_id", "title", "url", "description", "date" }, "read=0", null, null,
-						null, null);
+						"feed_id", "title", "url", "description", "date" },
+						"read=0", null, null, null, null);
 			}
 			int numRows = c.getCount();
 			c.moveToFirst();
@@ -173,11 +176,12 @@ public class NewsDroidDB {
 		inQuery = inQuery.replace(']', ')');
 		try {
 			Cursor c = null;
-			c = db.query(ARTICLES_TABLE, new String[] { "description"} , "article_id IN" + inQuery, 
-				null, null, null, null, null);
+			c = db.query(ARTICLES_TABLE, new String[] { "description" },
+					"article_id IN" + inQuery, null, null, null, null, null);
 			c.moveToFirst();
 			for (int i = 0; i < c.getCount(); ++i) {
-				descriptions.add(c.getString(0)); // TODO: check that, might be wrong
+				descriptions.add(c.getString(0)); // TODO: check that, might be
+				// wrong
 				c.moveToNext();
 			}
 			c.close();
@@ -186,12 +190,13 @@ public class NewsDroidDB {
 		}
 		return descriptions;
 	}
-	
+
 	public void markAsKnown(Long articleId) {
 		ArrayList<Long> idsOfRead = new ArrayList<Long>();
 		try {
 			Cursor c = null;
-			c = db.query(ARTICLES_TABLE, new String[] {"article_id"}, "read>" + time, null, null, null, null);
+			c = db.query(ARTICLES_TABLE, new String[] { "article_id" }, "read>"
+					+ time, null, null, null, null);
 			c.moveToFirst();
 			for (int i = 0; i < c.getCount(); ++i) {
 				idsOfRead.add(c.getLong(0));
@@ -205,16 +210,30 @@ public class NewsDroidDB {
 		values.put("known", idsOfRead.toString());
 		db.update(ARTICLES_TABLE, values, "article_id=" + articleId, null);
 	}
-	
-//	public long removeOldArticles() {
-//		db.delete(ARTICLES_TABLE, "read<" + time, null);
-//	}
-	
+
+	public HashSet<Long> removeOldArticles() {
+		HashSet<Long> oldArticleIds = new HashSet<Long>();
+		try {
+			Cursor c = db.query(ARTICLES_TABLE, new String[] {"article_id"}, "read<"+time, null, null, null, null);
+			c.moveToFirst();
+			for (int i = 0; i < c.getCount(); ++i) {
+				oldArticleIds.add(c.getLong(0));
+				c.moveToNext();
+			}
+			c.close();
+		} catch (SQLException e) {
+			Log.e("NewsDroid", e.toString());
+		}
+		db.delete(ARTICLES_TABLE, "read<" + time, null);
+		return oldArticleIds;
+	}
+
 	public int getArticleRead(long articleId) {
-		Cursor c = db.query(ARTICLES_TABLE, new String[] {"known"}, "article_id="+articleId, null, null, null, null);
+		Cursor c = db.query(ARTICLES_TABLE, new String[] { "known" },
+				"article_id=" + articleId, null, null, null, null);
 		if (c.getCount() == 0)
 			return 0;
-		
+
 		c.moveToFirst();
 		String known = c.getString(0);
 		if (known == "0")
