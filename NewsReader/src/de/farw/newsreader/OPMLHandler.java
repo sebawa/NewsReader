@@ -1,13 +1,10 @@
 package de.farw.newsreader;
 
-import java.net.URL;
 import java.util.ArrayList;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import android.util.Log;
 
 public class OPMLHandler extends DefaultHandler {
 	public ArrayList<String> feeds;

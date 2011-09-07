@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,7 +34,8 @@ public class BleuAlgorithm {
 	private static HashMap<Long, String> readyArticles = null;
 	private static String indexFile = "serializedIndex";
 	private static String articlesFile = "serializedArticles";
-	private static BufferedWriter bleuOut = null;
+	private static FileOutputStream bleuOut = null;
+	private static OutputStreamWriter osw = null;
 	private NewsDroidDB db;
 
 	public BleuAlgorithm(Context ctx) {
@@ -46,7 +48,8 @@ public class BleuAlgorithm {
 		}
 		if (bleuOut == null) {
 			try {
-				bleuOut = new BufferedWriter(new FileWriter("bleu_values"));
+				bleuOut = ctx.openFileOutput("bleu.txt", Context.MODE_PRIVATE); 
+				osw = new OutputStreamWriter(bleuOut);
 			} catch (IOException e) {
 				Log.e("NewsDroid", e.toString());
 			}
@@ -137,8 +140,11 @@ public class BleuAlgorithm {
 		
 		// for testing only
 		try {
-		    bleuOut.write(String.valueOf(bd.bleuValue) + ' ' + db.getArticleRead(id));
+		    osw.write(String.valueOf(bd.bleuValue) + ' ' + db.getArticleRead(id));
+		    osw.flush();
 		} catch (IOException e) {
+			Log.e("NewsDroid", e.toString());
+		} catch (RuntimeException e) {
 			Log.e("NewsDroid", e.toString());
 		}
 		return bd;
@@ -154,6 +160,8 @@ public class BleuAlgorithm {
 			ObjectOutputStream os = new ObjectOutputStream(fos);
 			os.writeObject(index);
 			os.close();
+			
+			osw.close();
 			bleuOut.close();
 		} catch (FileNotFoundException e) {
 			Log.e("NewsDroid", e.toString());
@@ -193,19 +201,12 @@ public class BleuAlgorithm {
 			if (i > from)
 				out += '_';
 			out += words[i];
-			// out += '_' + words[from];
 		}
 		return out;
 	}
 
 	private String preprocessText(String in) {
 		String text = new String(in);
-		// erase HTML content
-		/*
-		 * text = text .replaceAll(
-		 * "</?\\w+((\\s+\\w+(\\s*=\\s*(?:\".*?\"|'.*?'|[^'\">\\s]+))?)+\\s*|\\s*)/?>|&[\\p{Alnum}]*?;"
-		 * , " ");
-		 */
 		text = text.replaceAll("<([^<]*?)>", ""); // erase HTML content
 		text = text.toLowerCase(Locale.ENGLISH);
 		text = text.replaceAll("'([s]{0,1})", "");
@@ -229,8 +230,4 @@ public class BleuAlgorithm {
 
 		return text;
 	}
-	
-//	private HashSet<Long> removeOldIndices(HashSet<Long> in) {
-//		for (long l = 
-//	}
 }
