@@ -32,8 +32,6 @@ public class BleuAlgorithm {
 	private static HashMap<Long, String> readyArticles = null;
 	private static String indexFile = "serializedIndex";
 	private static String articlesFile = "serializedArticles";
-	private static FileOutputStream bleuOut = null;
-	private static OutputStreamWriter osw = null;
 	private NewsDroidDB db;
 
 	@SuppressWarnings("unchecked")
@@ -44,14 +42,6 @@ public class BleuAlgorithm {
 			Resources res = ctx.getResources();
 			String[] stopWordsData = res.getStringArray(R.array.stopwords_en);
 			stopWords = new HashSet<String>(Arrays.asList(stopWordsData));
-		}
-		if (bleuOut == null) {
-			try {
-				bleuOut = ctx.openFileOutput("bleu.txt", Context.MODE_PRIVATE); 
-				osw = new OutputStreamWriter(bleuOut);
-			} catch (IOException e) {
-				Log.e("NewsDroid", e.toString());
-			}
 		}
 		if (index == null) {
 			try {
@@ -138,16 +128,6 @@ public class BleuAlgorithm {
 			}
 		}
 		
-		// for testing only
-		try {
-			int known = db.getArticleRead(id);
-		    osw.write(String.valueOf(bd.bleuValue) + ' ' + known + '\n');
-		    osw.flush();
-		} catch (IOException e) {
-			Log.e("NewsDroid", e.toString());
-		} catch (RuntimeException e) {
-			Log.e("NewsDroid", e.toString());
-		}
 		return bd;
 	}
 
@@ -162,8 +142,6 @@ public class BleuAlgorithm {
 			os.writeObject(index);
 			os.close();
 			
-			osw.close();
-			bleuOut.close();
 		} catch (FileNotFoundException e) {
 			Log.e("NewsDroid", e.toString());
 		} catch (IOException e) {

@@ -1,5 +1,8 @@
 package de.farw.newsreader;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,6 +13,7 @@ import de.farw.newsreader.BleuAlgorithm.BleuData;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebView;
@@ -30,6 +34,11 @@ public class FeedView extends Activity {
 	private WebView mWebView;
 	private String url;
 	private long id;
+	private BleuData bd;
+
+	// debugging stuff
+	private FileOutputStream bleuOut = null;
+	private OutputStreamWriter osw = null;
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -56,6 +65,12 @@ public class FeedView extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		try {
+			bleuOut = openFileOutput("bleu.txt", MODE_APPEND);
+			osw = new OutputStreamWriter(bleuOut);
+		} catch (IOException e) {
+			Log.e("NewsDroid", e.toString());
+		}
 		ba = new BleuAlgorithm(getApplicationContext());
 		mWebView = new WebView(this);
 		mWebView.setWebViewClient(new FeedWebViewClient());
@@ -75,9 +90,28 @@ public class FeedView extends Activity {
 			id = b.getLong("id");
 		}
 		setTitle(title);
-		BleuData bd = ba.scanArticle(content, id);
+		bd = ba.scanArticle(content, id);
 		content = generateHTMLContent(content, bd.matchingNGrams);
 		mWebView.loadData(content, "text/html", "utf-8");
+	}
+
+	@Override
+	public void onDestroy() { // for testing only
+		super.onDestroy();
+		try {
+			NewsDroidDB db = new NewsDroidDB(this);
+			db.open();
+			int known = db.getArticleRead(id);
+			osw.write(String.valueOf(bd.bleuValue) + ' ' + known + '\n');
+			osw.flush();
+			osw.close();
+			bleuOut.close();
+			db.close();
+		} catch (IOException e) {
+			Log.e("NewsDroid", e.toString());
+		} catch (RuntimeException e) {
+			Log.e("NewsDroid", e.toString());
+		}
 	}
 
 	private String encodeHTML(String s) {
@@ -103,7 +137,6 @@ public class FeedView extends Activity {
 		// this pattern should match _all_ HTML tags
 		Pattern pTag = Pattern
 				.compile("</?\\w+((\\s+\\w+(\\s*=\\s*(?:\".*?\"|'.*?'|[^'\">\\s]+))?)+\\s*|\\s*)/?>|&[\\p{Alnum}]*?;");
-//				.compile("</?\\w+((\\s+\\w+(\\s*=\\s*(?:\".*?\"|'.*?'|[^'\">\\s]+))?)+\\s*|\\s*)/?>");
 		Matcher mTag = pTag.matcher(in);
 		StringBuffer fromHTML = new StringBuffer();
 		while (mTag.find()) {
@@ -115,17 +148,19 @@ public class FeedView extends Activity {
 		StringBuffer sb = new StringBuffer(fromHTML);
 		String buffer = fromHTML.toString();
 		for (String match : matching) {
-			sb = new StringBuffer();
-			match = match.replaceAll("_", " ");
-			Pattern p = Pattern.compile("(?i)\\b" + match + "\\p{Punct}*?");
-			Matcher m = p.matcher(buffer);
-			while (m.find()) {
-				String replacement = "<font color=\"#00FF00\">" + m.group()
-						+ "</font>";
-				m.appendReplacement(sb, replacement);
+			String[] match_words = match.split("_");
+			for (String mw : match_words) {
+				sb = new StringBuffer();
+				Pattern p = Pattern.compile("(?i)\\b" + mw + "\\p{Punct}*?");
+				Matcher m = p.matcher(buffer);
+				while (m.find()) {
+					String replacement = "<font color=\"#00FF00\">" + m.group()
+							+ "</font>";
+					m.appendReplacement(sb, replacement);
+				}
+				m.appendTail(sb);
+				buffer = sb.toString();
 			}
-			m.appendTail(sb);
-			buffer = sb.toString();
 		}
 
 		String data = new String(sb);
