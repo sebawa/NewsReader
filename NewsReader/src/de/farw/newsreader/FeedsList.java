@@ -146,7 +146,8 @@ public class FeedsList extends ListActivity {
 		List<String> items = new ArrayList<String>();
 
 		feeds = droidDB.getFeeds();
-		items.add(getString(R.string.unread));
+		int numUnread = droidDB.getNumUnread(-1L);
+		items.add(getString(R.string.unread) + " (" + numUnread + ")");
 		for (Feed feed : feeds) {
 			items.add(feed.title);
 		}

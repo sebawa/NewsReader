@@ -10,5 +10,6 @@ class Article extends Object {
 	public URL url;
 	public String description;
 	public Date date;
+	public boolean read;
 }
 

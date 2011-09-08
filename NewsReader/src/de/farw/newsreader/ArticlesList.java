@@ -13,6 +13,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -89,7 +90,11 @@ public class ArticlesList extends ListActivity {
 		String description = currentArticle.description;
 		String title = currentArticle.title;
 		droidDB.setRead(articleId);
-
+		currentArticle.read = true;
+		TextView titleText = (TextView) v.findViewById(R.id.title);
+		TextView timeText = (TextView) v.findViewById(R.id.time);
+		titleText.setTextColor(Color.DKGRAY);
+		timeText.setTextColor(Color.DKGRAY);
 		try {
 			Intent i = new Intent(this, FeedView.class);
 			i.putExtra("url", uri);
@@ -177,6 +182,13 @@ public class ArticlesList extends ListActivity {
 				TextView time = (TextView) v.findViewById(R.id.time);
 				title.setText(a.title);
 				time.setText(generateTimeString(a.date));
+				if(a.read) {
+					title.setTextColor(Color.DKGRAY);
+					time.setTextColor(Color.DKGRAY);
+				} else {
+					title.setTextColor(Color.LTGRAY);
+					time.setTextColor(Color.LTGRAY);
+				}
 			}
 			return v;
 		}
