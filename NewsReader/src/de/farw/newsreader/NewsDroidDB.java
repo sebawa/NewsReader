@@ -138,6 +138,7 @@ public class NewsDroidDB {
 						"read=0", null, null, null, null);
 			}
 			int numRows = c.getCount();
+			c.close();
 			return numRows;
 		} catch (SQLException e) {
 			Log.e("NewsDroid", e.toString());
