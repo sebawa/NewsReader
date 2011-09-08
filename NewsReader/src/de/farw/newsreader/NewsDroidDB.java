@@ -151,11 +151,11 @@ public class NewsDroidDB {
 			Cursor c = null;
 			if (feedId >= 0) {
 				c = db.query(ARTICLES_TABLE, new String[] { "article_id",
-						"feed_id", "title", "url", "description", "date" },
+						"feed_id", "title", "url", "description", "date", "read" },
 						"feed_id=" + feedId.toString(), null, null, null, null);
 			} else {
 				c = db.query(ARTICLES_TABLE, new String[] { "article_id",
-						"feed_id", "title", "url", "description", "date" },
+						"feed_id", "title", "url", "description", "date", "read" },
 						"read=0", null, null, null, null);
 			}
 			int numRows = c.getCount();
@@ -168,6 +168,7 @@ public class NewsDroidDB {
 				article.url = new URL(c.getString(3));
 				article.description = c.getString(4);
 				article.date = new Date(c.getLong(5));
+				article.read = c.getInt(6) == 0 ? false : true;
 				articles.add(article);
 				c.moveToNext();
 			}
