@@ -65,7 +65,10 @@ public class NewsDroidDB {
 			cal.setTime(date);
 			insertTime = cal.getTimeInMillis();
 			values.put("date", insertTime);
+		} else {
+			values.put("date", 0);
 		}
+		
 
 		try {
 			Cursor c = db.query(
@@ -94,11 +97,14 @@ public class NewsDroidDB {
 		values.put("read", 0);
 		values.put("description", description);
 		values.put("known", 0);
+			
+//		if (insertTime < 1315754657000L)
+//			throw new RuntimeException();
 
 		return (db.insert(ARTICLES_TABLE, null, values) > 0);
 	}
 
-	public boolean deleteAricles(Long feedId) {
+	public boolean deleteArticles(Long feedId) {
 		return (db.delete(ARTICLES_TABLE, "feed_id=" + feedId.toString(), null) > 0);
 	}
 

@@ -6,6 +6,7 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -121,6 +122,7 @@ public class RSSHandler extends Thread {
 
 		private NewsDroidDB droidDB = null;
 		private boolean noDate = false;
+		private boolean brokenURL = false;
 
 		public RSSLoader() {
 			currentFeed.title = "";
@@ -170,19 +172,17 @@ public class RSSHandler extends Thread {
 			}
 
 			// Check if looking for article, and if article is complete
-			if (targetFlag == TARGET_ARTICLES && currentArticle.url != null
-					&& currentArticle.title != ""
-					&& currentArticle.description != ""
-					&& (noDate || currentArticle.date != null)) {
-				currentArticle.title = Html.fromHtml(currentArticle.title).toString();
-				droidDB.insertArticle(currentFeed.feedId, currentArticle.title,
-						currentArticle.url, currentArticle.description,
-						currentArticle.date);
+			if (targetFlag == TARGET_ARTICLES && currentArticle.url != null && currentArticle.title != "" && currentArticle.description != "" && (noDate || currentArticle.date != null)) {
+				if (!brokenURL) {
+					currentArticle.title = Html.fromHtml(currentArticle.title).toString();
+					droidDB.insertArticle(currentFeed.feedId, currentArticle.title, currentArticle.url, currentArticle.description, currentArticle.date);
+				}
 				currentArticle.title = "";
 				currentArticle.url = null;
 				currentArticle.description = "";
 				currentArticle.date = null;
 				noDate = false;
+				brokenURL = false;
 
 				// Lets check if we've hit our limit on number of articles
 				articlesAdded++;
@@ -209,25 +209,29 @@ public class RSSHandler extends Thread {
 						currentArticle.title += chars;
 					if (inDescription)
 						currentArticle.description += chars;
-					if (inDate) { // date formated like: Tue, 23 Aug 2011
-									// 12:56:35
-						// +0200
+					if (inDate) { // date formated like: Tue, 23 Aug 2011 12:56:35 +0200
 						try {
-							currentArticle.date = new SimpleDateFormat(
-									"EEE, dd MMM yyyy HH:mm:ss Z").parse(chars);
+							currentArticle.date = new SimpleDateFormat( "EEE, dd MMM yyyy HH:mm:ss Z").parse(chars);
 						} catch (ParseException e) {
 							try {
-								currentArticle.date = new SimpleDateFormat(
-										"EEE, dd MMM yyyy HH:mm:ss z")
-										.parse(chars);
+								currentArticle.date = new SimpleDateFormat( "EEE, dd MMM yyyy HH:mm:ss z") .parse(chars);
 							} catch (ParseException f) {
 								currentArticle.date = null;
 								noDate = true;
 							}
 						}
+						
+						// debugging
+//						GregorianCalendar cal = new GregorianCalendar();
+//						cal.setTime(currentArticle.date);
+//						long insertTime = cal.getTimeInMillis();
+//						
+//						if (noDate == false && insertTime <= 1315587859L)
+//							throw new RuntimeException();
+								
+						//end debugging
 					}
-					if (inOldDate) { // date formated like:
-										// 2011-08-31T18:12:03+00:00
+					if (inOldDate) { // date formated like: 2011-08-31T18:12:03+00:00
 						try {
 							final int splitPoint = chars.length() - 3;
 							String correctedDate = chars.substring(0,
@@ -243,6 +247,7 @@ public class RSSHandler extends Thread {
 					}
 				}
 			} catch (MalformedURLException e) {
+				brokenURL = true;
 				Log.e("NewsDroid", e.toString());
 			}
 
@@ -287,6 +292,7 @@ public class RSSHandler extends Thread {
 				inDescription = false;
 				inDate = false;
 				inOldDate = false;
+				articlesAdded = 0;
 
 				SAXParserFactory spf = SAXParserFactory.newInstance();
 				SAXParser sp = spf.newSAXParser();
