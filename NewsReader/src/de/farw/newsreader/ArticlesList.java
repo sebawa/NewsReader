@@ -96,7 +96,7 @@ public class ArticlesList extends ListActivity {
 		titleText.setTextColor(Color.DKGRAY);
 		timeText.setTextColor(Color.DKGRAY);
 		try {
-			Intent i = new Intent(this, FeedView.class);
+			Intent i = new Intent(this, ArticleView.class);
 			i.putExtra("url", uri);
 			i.putExtra("description", description);
 			i.putExtra("title", title);

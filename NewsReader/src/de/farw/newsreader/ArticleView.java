@@ -19,7 +19,7 @@ import android.view.MenuItem;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-public class FeedView extends Activity {
+public class ArticleView extends Activity {
 	private class FeedWebViewClient extends WebViewClient {
 		@Override
 		public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -34,6 +34,8 @@ public class FeedView extends Activity {
 	private WebView mWebView;
 	private String url;
 	private long id;
+	private String title;
+	private String content;
 	private BleuData bd;
 
 	// debugging stuff
@@ -74,8 +76,6 @@ public class FeedView extends Activity {
 		ba = new BleuAlgorithm(getApplicationContext());
 		mWebView = new WebView(this);
 		mWebView.setWebViewClient(new FeedWebViewClient());
-		String title;
-		String content;
 		setContentView(mWebView);
 		if (savedInstanceState != null) {
 			url = savedInstanceState.getString("url");
@@ -91,8 +91,17 @@ public class FeedView extends Activity {
 		}
 		setTitle(title);
 		bd = ba.scanArticle(content, id);
-		content = generateHTMLContent(content, bd.matchingNGrams);
-		mWebView.loadData(content, "text/html", "utf-8");
+		String toDisplay = generateHTMLContent(content, bd.matchingNGrams);
+		mWebView.loadData(toDisplay, "text/html", "utf-8");
+	}
+	
+	@Override
+	public void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putString("url", url.toString());
+		outState.putString("description", content);
+		outState.putString("title", title);
+		outState.putLong("id", id);
 	}
 
 	@Override

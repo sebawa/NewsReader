@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -34,8 +35,14 @@ public class RSSHandler extends Thread {
 	private Context ctx;
 	private RSSLoader loader;
 	private ProgressDialog dialog;
+	private static AtomicBoolean running = new AtomicBoolean(false);
 	
 	public RSSHandler(Feed f, Context c, ProgressDialog d) {
+		if (!running.compareAndSet(false, true)) {
+			handler.sendEmptyMessage(2);
+			return;
+		}
+		
 		feed = f;
 		ctx = c;
 		dialog = d;
@@ -43,6 +50,11 @@ public class RSSHandler extends Thread {
 	}
 	
 	public RSSHandler(ArrayList<Feed> f, Context c, ProgressDialog d) {
+		if (!running.compareAndSet(false, true)) {
+			handler.sendEmptyMessage(2);
+			return;
+		}
+		
 		feed = null;
 		feeds = f;
 		ctx = c;
@@ -51,6 +63,11 @@ public class RSSHandler extends Thread {
 	}
 	
 	public RSSHandler(Context c) {
+		if (!running.compareAndSet(false,true)) {
+			handler.sendEmptyMessage(2);
+			return;
+		}
+		
 		ctx = c;
 		feed = null;
 		loader = new RSSLoader();
@@ -90,6 +107,10 @@ public class RSSHandler extends Thread {
 			dialog.dismiss();
 			if (msg.what == 1)
 				Toast.makeText(ctx, ctx.getString(R.string.no_internet), Toast.LENGTH_SHORT).show();
+			if (msg.what == 2)
+				Toast.makeText(ctx, ctx.getString(R.string.already_updating), Toast.LENGTH_SHORT).show();
+			
+			running.set(false);
 		}
 	};
 	

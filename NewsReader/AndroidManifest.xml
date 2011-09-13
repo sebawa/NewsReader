@@ -13,6 +13,6 @@
         </activity>
         <activity android:name="de.farw.newsreader.URLEditor" android:label="@string/url_editor" />
         <activity android:name="de.farw.newsreader.ArticlesList" android:label="@string/articles_list" />
-        <activity android:name="de.farw.newsreader.FeedView" />
+        <activity android:name="de.farw.newsreader.ArticleView" />
     </application>
 </manifest> 
