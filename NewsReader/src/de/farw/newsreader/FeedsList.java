@@ -1,8 +1,6 @@
 package de.farw.newsreader;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,6 +86,7 @@ public class FeedsList extends ListActivity {
 			updateThread.start();
 			break;
 		case ACTIVITY_IMPORT:
+			dialog = ProgressDialog.show(this, "", getString(R.string.importing));
 			final OPMLHandler handler = new OPMLHandler();
 			final Context context = this.getApplicationContext();
 			try {
@@ -100,16 +99,12 @@ public class FeedsList extends ListActivity {
 				Log.e("NewsReader", e.toString());
 			}
 			
-			for(String feed: handler.feeds) {
-				RSSHandler rh = new RSSHandler(context);
-				try {
-					rh.createFeed(new URL(feed));
-				} catch (MalformedURLException e) {
-					Log.e("NewsReader", e.toString());
-				}
-			}
-				
+//			for(String feed: handler.feeds) {
+			RSSHandler rh = new RSSHandler(handler.feeds, dialog, context);
+			rh.start();
 		}
+				
+//		}
 
 		return true;
 	}
@@ -121,7 +116,7 @@ public class FeedsList extends ListActivity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data); // , extras);
+		super.onActivityResult(requestCode, resultCode, data);
 		fillData();
 	}
 

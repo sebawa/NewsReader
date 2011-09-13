@@ -63,12 +63,15 @@ public class ArticlesList extends ListActivity {
 					RSSHandler updateThread = new RSSHandler(feed, this
 							.getApplicationContext(), dialog);
 					updateThread.start();
+					updateThread.join();
 				}
 			}
 			setTitle(feed.title);
 
 			fillData();
 		} catch (MalformedURLException e) {
+			Log.e("NewsDroid", e.toString());
+		} catch (InterruptedException e) {
 			Log.e("NewsDroid", e.toString());
 		}
 	}
@@ -125,13 +128,23 @@ public class ArticlesList extends ListActivity {
 						getString(R.string.loading_dialog));
 				RSSHandler updateThread = new RSSHandler(feed, this
 						.getApplicationContext(), dialog);
-				updateThread.start();
+				try {
+					updateThread.start();
+					updateThread.join();
+				} catch (InterruptedException e) {
+					Log.e("NewsDroid", e.toString());
+				}
 			} else {
 				ArrayList<Feed> feeds = droidDB.getFeeds();
 				dialog = ProgressDialog.show(this, "",
 						getString(R.string.loading_dialog));
 				RSSHandler updateThread = new RSSHandler(feeds, this, dialog);
-				updateThread.start();
+				try {
+					updateThread.start();
+					updateThread.join();
+				} catch (InterruptedException e) {
+					Log.e("NewsDroid", e.toString());
+				}
 			}
 			fillData();
 			break;

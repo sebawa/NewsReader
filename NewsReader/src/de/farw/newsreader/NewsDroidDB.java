@@ -56,37 +56,36 @@ public class NewsDroidDB {
 		return (db.delete(FEEDS_TABLE, "feed_id=" + feedId.toString(), null) > 0);
 	}
 
-	public boolean insertArticle(Long feedId, String title, URL url,
-			String description, Date date) {
+	public boolean insertArticle(Long feedId, String title, URL url, String description, Date date) {
 		ContentValues values = new ContentValues();
-		long insertTime = 0;
+		long timeNow = 0;
+		int read = 0;
+		String known = null;
 		if (date != null) {
 			GregorianCalendar cal = new GregorianCalendar();
 			cal.setTime(date);
-			insertTime = cal.getTimeInMillis();
-			values.put("date", insertTime);
+			timeNow = cal.getTimeInMillis();
+			values.put("date", timeNow);
 		} else {
 			values.put("date", 0);
 		}
 		
-
 		try {
 			Cursor c = db.query(
 					ARTICLES_TABLE, // check if article is already in database
-					new String[] { "article_id", "date" }, "url=\"" + url + "\"",
+					new String[] { "read", "known", "date" }, "url=\"" + url + "\"",
 					null, null, null, null);
 			int count = c.getCount();
 			if (count >= 1) {
 				c.moveToFirst();
-				long articles_id = c.getLong(0);
-				long oldDate = c.getLong(1);
-				c.close();
-				if (oldDate < insertTime)
-					db.delete(ARTICLES_TABLE, "article_id=" + articles_id, null);
-				else
-					return true;
-			} else
-				c.close();
+				read = c.getInt(0);
+				known = c.getString(1);
+				long oldDate = c.getLong(2);
+				if (oldDate < timeNow) {
+					read = 0;
+				}
+			}
+			c.close();
 		} catch (RuntimeException e) {
 			Log.e("NewsDroid", e.toString());
 		}
@@ -94,13 +93,10 @@ public class NewsDroidDB {
 		values.put("feed_id", feedId);
 		values.put("title", title);
 		values.put("url", url.toString());
-		values.put("read", 0);
+		values.put("read", read);
 		values.put("description", description);
-		values.put("known", 0);
+		values.put("known", known);
 			
-//		if (insertTime < 1315754657000L)
-//			throw new RuntimeException();
-
 		return (db.insert(ARTICLES_TABLE, null, values) > 0);
 	}
 

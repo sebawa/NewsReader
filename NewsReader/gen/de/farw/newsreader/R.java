@@ -40,6 +40,7 @@ public final class R {
         public static final int articles_list=0x7f050008;
         public static final int button_cancel=0x7f050006;
         public static final int button_ok=0x7f050005;
+        public static final int importing=0x7f050013;
         public static final int invalid_url=0x7f050009;
         public static final int invalid_url_content=0x7f05000a;
         public static final int loading_dialog=0x7f05000f;

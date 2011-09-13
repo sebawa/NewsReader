@@ -6,7 +6,6 @@ import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.GregorianCalendar;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -31,89 +30,119 @@ import android.widget.Toast;
 
 public class RSSHandler extends Thread {
 	private ArrayList<Feed> feeds;
+	private ArrayList<String> urls;
 	private Feed feed;
 	private Context ctx;
 	private RSSLoader loader;
 	private ProgressDialog dialog;
+	private static int currentAction;
 	private static AtomicBoolean running = new AtomicBoolean(false);
-	
+	public static final int ACTION_UPDATE_SINGLE_FEED = 0;
+	public static final int ACTION_UPDATE_ALL_FEEDS = 1;
+	public static final int ACTION_INSERT_SINGE_FEED = 2;
+	public static final int ACTION_IMPORT_FEEDS = 3;
+
 	public RSSHandler(Feed f, Context c, ProgressDialog d) {
-		if (!running.compareAndSet(false, true)) {
-			handler.sendEmptyMessage(2);
-			return;
-		}
-		
+		currentAction = ACTION_UPDATE_SINGLE_FEED;
 		feed = f;
 		ctx = c;
 		dialog = d;
 		loader = new RSSLoader();
 	}
-	
+
 	public RSSHandler(ArrayList<Feed> f, Context c, ProgressDialog d) {
-		if (!running.compareAndSet(false, true)) {
-			handler.sendEmptyMessage(2);
-			return;
-		}
-		
-		feed = null;
+		currentAction = ACTION_UPDATE_ALL_FEEDS;
 		feeds = f;
 		ctx = c;
 		dialog = d;
 		loader = new RSSLoader();
 	}
-	
+
+	public RSSHandler(ArrayList<String> u, ProgressDialog d, Context c) {
+		currentAction = ACTION_IMPORT_FEEDS;
+		ctx = c;
+		urls = u;
+		dialog = d;
+		loader = new RSSLoader();
+	}
+
 	public RSSHandler(Context c) {
-		if (!running.compareAndSet(false,true)) {
+		currentAction = ACTION_INSERT_SINGE_FEED;
+		ctx = c;
+		loader = new RSSLoader();
+	}
+
+	@Override
+	public void run() {
+		if (!running.compareAndSet(false, true)) {
 			handler.sendEmptyMessage(2);
 			return;
 		}
-		
-		ctx = c;
-		feed = null;
-		loader = new RSSLoader();
-	}
-	
-	@Override
-	public void run() {
+
 		if (hasInternet() == false) {
 			handler.sendEmptyMessage(1);
 			return;
 		}
-		
-		if (feed == null) {
+
+		switch (currentAction) {
+		case ACTION_IMPORT_FEEDS:
+			importFeed();
+			break;
+		case ACTION_UPDATE_ALL_FEEDS:
 			for (Feed f : feeds)
 				loader.updateArticles(ctx, f);
-		} else {
+			break;
+		case ACTION_UPDATE_SINGLE_FEED:
 			loader.updateArticles(ctx, feed);
+			break;
 		}
 		handler.sendEmptyMessage(0);
 	}
-	
+
 	public void createFeed(URL url) {
 		loader.createFeed(ctx, url);
 	}
-	
+
+	private void importFeed() {
+		for (String url : urls) {
+			if (hasInternet() == false) {
+				handler.sendEmptyMessage(1);
+				return;
+			}
+			try {
+				loader.createFeed(ctx, new URL(url));
+			} catch (MalformedURLException e) {
+				Log.e("NewsDroid", e.toString());
+			}
+		}
+		handler.sendEmptyMessage(0);
+	}
+
 	private boolean hasInternet() {
-		NetworkInfo info = ((ConnectivityManager)ctx.getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
-		if (info==null || !info.isConnected()) {
+		NetworkInfo info = ((ConnectivityManager) ctx
+				.getSystemService(Context.CONNECTIVITY_SERVICE))
+				.getActiveNetworkInfo();
+		if (info == null || !info.isConnected()) {
 			return false;
 		}
 		return true;
 	}
-	
+
 	private Handler handler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			dialog.dismiss();
 			if (msg.what == 1)
-				Toast.makeText(ctx, ctx.getString(R.string.no_internet), Toast.LENGTH_SHORT).show();
+				Toast.makeText(ctx, ctx.getString(R.string.no_internet),
+						Toast.LENGTH_SHORT).show();
 			if (msg.what == 2)
-				Toast.makeText(ctx, ctx.getString(R.string.already_updating), Toast.LENGTH_SHORT).show();
-			
+				Toast.makeText(ctx, ctx.getString(R.string.already_updating),
+						Toast.LENGTH_SHORT).show();
+
 			running.set(false);
 		}
 	};
-	
+
 	private class RSSLoader extends DefaultHandler {
 
 		// Used to define what elements we are currently in
@@ -193,10 +222,16 @@ public class RSSHandler extends Thread {
 			}
 
 			// Check if looking for article, and if article is complete
-			if (targetFlag == TARGET_ARTICLES && currentArticle.url != null && currentArticle.title != "" && currentArticle.description != "" && (noDate || currentArticle.date != null)) {
+			if (targetFlag == TARGET_ARTICLES && currentArticle.url != null
+					&& currentArticle.title != ""
+					&& currentArticle.description != ""
+					&& (noDate || currentArticle.date != null)) {
 				if (!brokenURL) {
-					currentArticle.title = Html.fromHtml(currentArticle.title).toString();
-					droidDB.insertArticle(currentFeed.feedId, currentArticle.title, currentArticle.url, currentArticle.description, currentArticle.date);
+					currentArticle.title = Html.fromHtml(currentArticle.title)
+							.toString();
+					droidDB.insertArticle(currentFeed.feedId,
+							currentArticle.title, currentArticle.url,
+							currentArticle.description, currentArticle.date);
 				}
 				currentArticle.title = "";
 				currentArticle.url = null;
@@ -230,29 +265,24 @@ public class RSSHandler extends Thread {
 						currentArticle.title += chars;
 					if (inDescription)
 						currentArticle.description += chars;
-					if (inDate) { // date formated like: Tue, 23 Aug 2011 12:56:35 +0200
+					if (inDate) { // date formated like: Tue, 23 Aug 2011
+									// 12:56:35 +0200
 						try {
-							currentArticle.date = new SimpleDateFormat( "EEE, dd MMM yyyy HH:mm:ss Z").parse(chars);
+							currentArticle.date = new SimpleDateFormat(
+									"EEE, dd MMM yyyy HH:mm:ss Z").parse(chars);
 						} catch (ParseException e) {
 							try {
-								currentArticle.date = new SimpleDateFormat( "EEE, dd MMM yyyy HH:mm:ss z") .parse(chars);
+								currentArticle.date = new SimpleDateFormat(
+										"EEE, dd MMM yyyy HH:mm:ss z")
+										.parse(chars);
 							} catch (ParseException f) {
 								currentArticle.date = null;
 								noDate = true;
 							}
 						}
-						
-						// debugging
-//						GregorianCalendar cal = new GregorianCalendar();
-//						cal.setTime(currentArticle.date);
-//						long insertTime = cal.getTimeInMillis();
-//						
-//						if (noDate == false && insertTime <= 1315587859L)
-//							throw new RuntimeException();
-								
-						//end debugging
 					}
-					if (inOldDate) { // date formated like: 2011-08-31T18:12:03+00:00
+					if (inOldDate) { // date formated like:
+										// 2011-08-31T18:12:03+00:00
 						try {
 							final int splitPoint = chars.length() - 3;
 							String correctedDate = chars.substring(0,

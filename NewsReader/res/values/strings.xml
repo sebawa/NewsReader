@@ -19,4 +19,5 @@
     <string name="no_internet">No internet connection available</string>
     <string name="menu_import">Import</string>
     <string name="already_updating">Update is running...</string>
+    <string name="importing">Importing feeds...</string>
 </resources>
