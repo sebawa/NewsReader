@@ -94,7 +94,7 @@ public class ArticleView extends Activity {
 		String toDisplay = generateHTMLContent(content, bd.matchingNGrams);
 		mWebView.loadData(toDisplay, "text/html", "utf-8");
 	}
-	
+
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
@@ -127,7 +127,7 @@ public class ArticleView extends Activity {
 		StringBuffer out = new StringBuffer();
 		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
-			if (c > 127 || c == '"') { // || c == '<' || c == '>') {
+			if (c > 127 || c == '"') {
 				out.append("&#" + (int) c + ";");
 			} else {
 				out.append(c);
@@ -157,19 +157,16 @@ public class ArticleView extends Activity {
 		StringBuffer sb = new StringBuffer(fromHTML);
 		String buffer = fromHTML.toString();
 		for (String match : matching) {
-			String[] match_words = match.split("_");
-			for (String mw : match_words) {
-				sb = new StringBuffer();
-				Pattern p = Pattern.compile("(?i)\\b" + mw + "\\p{Punct}*?");
-				Matcher m = p.matcher(buffer);
-				while (m.find()) {
-					String replacement = "<font color=\"#00FF00\">" + m.group()
-							+ "</font>";
-					m.appendReplacement(sb, replacement);
-				}
-				m.appendTail(sb);
-				buffer = sb.toString();
+			sb = new StringBuffer();
+			Pattern p = Pattern.compile("(?i)\\b" + match + "[\\p{Punct}\\p{Space}]+?");
+			Matcher m = p.matcher(buffer);
+			while (m.find()) {
+				String replacement = "<font color=\"#00FF00\">" + m.group()
+						+ "</font>";
+				m.appendReplacement(sb, replacement);
 			}
+			m.appendTail(sb);
+			buffer = sb.toString();
 		}
 
 		String data = new String(sb);

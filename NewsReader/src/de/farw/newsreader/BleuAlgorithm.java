@@ -48,7 +48,6 @@ public class BleuAlgorithm {
 				ObjectInputStream is = new ObjectInputStream(fis);
 				index = (HashMap<String, HashSet<Long>>) is.readObject();
 				is.close();
-//				HashSet<Long> oldArticles = db.removeOldArticles();
 				HashSet<Long> oldArticles = new HashSet<Long>(); // TODO: remove after debugging
 			    for (String key: index.keySet()) {
 			        HashSet<Long> indices = index.get(key);
@@ -74,7 +73,6 @@ public class BleuAlgorithm {
 				Log.e("NewsDroid", e.toString());
 			}
 		}
-
 	}
 
 	public BleuData scanArticle(String article, long id) {
@@ -153,7 +151,7 @@ public class BleuAlgorithm {
 		String[] h_words = h.split(" ");
 		String[] t_words = t.split(" ");
 
-		for (int i = 2; i <= 4; ++i) {
+		for (int i = 1; i <= 4; ++i) { // save 1-grams in matching
 			HashSet<String> ng_h = new HashSet<String>(); // i-grams of h
 			HashSet<String> ng_t = new HashSet<String>();
 			for (int j = 0; j <= h_words.length - i; ++j) {
@@ -165,8 +163,11 @@ public class BleuAlgorithm {
 				ng_t.add(sub);
 			}
 			ng_h.retainAll(ng_t);
-			matching.addAll(ng_h);
-			s_bleu += ((double) ng_h.size() / (double) ng_t.size());
+			if (i == 1) {
+				matching.addAll(ng_h);
+			} else {
+				s_bleu += ((double) ng_h.size() / (double) ng_t.size());
+			}
 		}
 
 		s_bleu *= 0.33333;
