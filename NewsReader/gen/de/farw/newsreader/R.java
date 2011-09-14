@@ -35,6 +35,7 @@ public final class R {
         public static final int webview=0x7f030005;
     }
     public static final class string {
+        public static final int all_read=0x7f050014;
         public static final int already_updating=0x7f050012;
         public static final int app_name=0x7f050000;
         public static final int articles_list=0x7f050008;

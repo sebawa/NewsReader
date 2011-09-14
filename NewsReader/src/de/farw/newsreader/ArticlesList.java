@@ -29,6 +29,7 @@ import android.widget.TextView;
 public class ArticlesList extends ListActivity implements IList {
 
 	private static final int ACTIVITY_REFRESH = 1;
+	private static final int ACTIVITY_READ = 2;
 	private List<Article> articles;
 	private Feed feed;
 	private NewsDroidDB droidDB;
@@ -90,6 +91,7 @@ public class ArticlesList extends ListActivity implements IList {
 		Article currentArticle = articles.get(position);
 		String uri = currentArticle.url.toString();
 		Long articleId = currentArticle.articleId;
+		Long feedId = currentArticle.feedId;
 		String description = currentArticle.description;
 		String title = currentArticle.title;
 		droidDB.setRead(articleId);
@@ -104,6 +106,7 @@ public class ArticlesList extends ListActivity implements IList {
 			i.putExtra("description", description);
 			i.putExtra("title", title);
 			i.putExtra("id", articleId);
+			i.putExtra("feedId", feedId);
 			startActivity(i);
 		} catch (Exception e) {
 			Log.e("NewsDroid", e.toString());
@@ -122,6 +125,7 @@ public class ArticlesList extends ListActivity implements IList {
 		super.onCreateOptionsMenu(menu);
 		menu.add(0, ACTIVITY_REFRESH, android.view.Menu.NONE,
 				R.string.menu_refresh_articles);
+		menu.add(0, ACTIVITY_READ, android.view.Menu.NONE, R.string.all_read);
 		return true;
 	}
 
@@ -141,6 +145,9 @@ public class ArticlesList extends ListActivity implements IList {
 				updateThread.start();
 			}
 			break;
+		case ACTIVITY_READ:
+			droidDB.setAllRead(feed.feedId);
+			fillData();
 		}
 
 		return true;

@@ -19,4 +19,5 @@
         	android:label="@string/articles_list" />
         <activity android:name="de.farw.newsreader.ArticleView" />
     </application>
+<!--	<uses-sdk android:minSdkVersion="7" />-->
 </manifest> 

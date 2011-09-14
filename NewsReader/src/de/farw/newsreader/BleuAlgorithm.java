@@ -19,10 +19,13 @@ import android.util.Log;
 public class BleuAlgorithm {
 	public class BleuData {
 		public double bleuValue;
+		public long timeDiff;
 		public HashSet<String> matchingNGrams;
 
 		public BleuData() {
 			matchingNGrams = new HashSet<String>();
+			bleuValue = 0.0;
+			timeDiff = 0;
 		}
 	}
 
@@ -115,12 +118,15 @@ public class BleuAlgorithm {
 
 		BleuData bd = new BleuData();
 		HashSet<String> matching = new HashSet<String>();
-		for (Long l : otherArticlesId) {
+		long articlesDate = db.getArticleDate(id);
+		for (Long checkId : otherArticlesId) {
 			matching.clear();
-			double bleuVal = calculateBLEU(readyArticle, readyArticles.get(l),
+			double bleuVal = calculateBLEU(readyArticle, readyArticles.get(checkId),
 					matching);
 			if (bleuVal > bd.bleuValue) {
+				long othersDate = db.getArticleDate(checkId);
 				bd.bleuValue = bleuVal;
+				bd.timeDiff = Math.abs(articlesDate - othersDate);
 				bd.matchingNGrams = new HashSet<String>(matching);
 			}
 		}

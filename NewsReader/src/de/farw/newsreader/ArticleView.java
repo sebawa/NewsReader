@@ -1,5 +1,7 @@
 package de.farw.newsreader;
 
+import gnu.trove.map.hash.TIntDoubleHashMap;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -34,9 +36,12 @@ public class ArticleView extends Activity {
 	private WebView mWebView;
 	private String url;
 	private long id;
+	private long feedId;
 	private String title;
 	private String content;
 	private BleuData bd;
+	private static Perceptron perceptron;
+	private TIntDoubleHashMap pX;
 
 	// debugging stuff
 	private FileOutputStream bleuOut = null;
@@ -55,6 +60,7 @@ public class ArticleView extends Activity {
 		super.onMenuItemSelected(featureId, item);
 		switch (item.getItemId()) {
 		case ACTIVITY_READ:
+			perceptron.learnArticle(pX, 1);
 			NewsDroidDB db = new NewsDroidDB(getApplicationContext());
 			db.open();
 			db.markAsKnown(id);
@@ -76,22 +82,29 @@ public class ArticleView extends Activity {
 		ba = new BleuAlgorithm(getApplicationContext());
 		mWebView = new WebView(this);
 		mWebView.setWebViewClient(new FeedWebViewClient());
+		if (perceptron == null) {
+			perceptron = new Perceptron(this);
+		}
 		setContentView(mWebView);
 		if (savedInstanceState != null) {
 			url = savedInstanceState.getString("url");
 			content = savedInstanceState.getString("description");
 			title = savedInstanceState.getString("title");
 			id = savedInstanceState.getLong("id");
+			feedId = savedInstanceState.getLong("feedId");
 		} else {
 			Bundle b = getIntent().getExtras();
 			url = b.getString("url");
 			content = b.getString("description");
 			title = b.getString("title");
 			id = b.getLong("id");
+			feedId = b.getLong("feedId");
 		}
 		setTitle(title);
 		bd = ba.scanArticle(content, id);
 		String toDisplay = generateHTMLContent(content, bd.matchingNGrams);
+		pX = Perceptron.generateX(bd.bleuValue, feedId, bd.matchingNGrams.size(), bd.timeDiff);
+		perceptron.getAssumption(pX);
 		mWebView.loadData(toDisplay, "text/html", "utf-8");
 	}
 
@@ -105,8 +118,10 @@ public class ArticleView extends Activity {
 	}
 
 	@Override
-	public void onDestroy() { // for testing only
+	public void onDestroy() { 
 		super.onDestroy();
+		// only if not learned
+		perceptron.learnArticle(pX, -1);
 		try {
 			NewsDroidDB db = new NewsDroidDB(this);
 			db.open();

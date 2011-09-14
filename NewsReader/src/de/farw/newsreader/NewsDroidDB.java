@@ -268,4 +268,24 @@ public class NewsDroidDB {
 		
 		return 1;
 	}
+	
+	public long getArticleDate(long articleId) {
+		Cursor c = db.query(ARTICLES_TABLE, new String[] {"date"}, "article_id=" + articleId, 
+				null, null, null, null);
+		if (c.getCount() == 0) {
+			c.close();
+			return 0;
+		}
+		
+		c.moveToFirst();
+		long date = c.getLong(0);
+		c.close();
+		return date;
+	}
+	
+	public void setAllRead(long feedID) {
+		ContentValues values = new ContentValues();
+		values.put("read", 1);
+		db.update(ARTICLES_TABLE, values, "feed_id="+feedID, null);
+	}
 }
