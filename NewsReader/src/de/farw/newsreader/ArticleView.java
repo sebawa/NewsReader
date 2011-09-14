@@ -40,8 +40,9 @@ public class ArticleView extends Activity {
 	private String title;
 	private String content;
 	private BleuData bd;
-	private static Perceptron perceptron;
+	private static Perceptron perceptron = null;
 	private TIntDoubleHashMap pX;
+	private boolean learned = false;
 
 	// debugging stuff
 	private FileOutputStream bleuOut = null;
@@ -61,6 +62,7 @@ public class ArticleView extends Activity {
 		switch (item.getItemId()) {
 		case ACTIVITY_READ:
 			perceptron.learnArticle(pX, 1);
+			learned = true;
 			NewsDroidDB db = new NewsDroidDB(getApplicationContext());
 			db.open();
 			db.markAsKnown(id);
@@ -120,8 +122,9 @@ public class ArticleView extends Activity {
 	@Override
 	public void onDestroy() { 
 		super.onDestroy();
-		// only if not learned
-		perceptron.learnArticle(pX, -1);
+		if (learned == false) {
+			perceptron.learnArticle(pX, -1);
+		}
 		try {
 			NewsDroidDB db = new NewsDroidDB(this);
 			db.open();
