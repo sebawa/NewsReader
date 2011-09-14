@@ -11,6 +11,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -20,7 +21,7 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-public class FeedsList extends ListActivity {
+public class FeedsList extends ListActivity implements IList {
 
 	private static final int ACTIVITY_DELETE = 1;
 	private static final int ACTIVITY_INSERT = 2;
@@ -53,6 +54,13 @@ public class FeedsList extends ListActivity {
 		}
 		BleuAlgorithm.saveBleuData(this);
 	}
+	
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		if (dialog != null && dialog.isShowing())
+			dialog.show();
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -82,7 +90,7 @@ public class FeedsList extends ListActivity {
 		case ACTIVITY_UPDATE:
 			feeds = droidDB.getFeeds();
 			dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog));
-			RSSHandler updateThread = new RSSHandler(feeds, this, dialog);
+			RSSHandler updateThread = new RSSHandler(feeds, this, dialog, this.getApplicationContext());
 			updateThread.start();
 			break;
 		case ACTIVITY_IMPORT:
@@ -137,7 +145,8 @@ public class FeedsList extends ListActivity {
 		startActivityForResult(i, ACTIVITY_VIEW);
 	}
 
-	private void fillData() {
+	@Override
+	public void fillData() {
 		List<String> items = new ArrayList<String>();
 
 		feeds = droidDB.getFeeds();

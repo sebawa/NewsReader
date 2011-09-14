@@ -13,6 +13,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,7 +26,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class ArticlesList extends ListActivity {
+public class ArticlesList extends ListActivity implements IList {
 
 	private static final int ACTIVITY_REFRESH = 1;
 	private List<Article> articles;
@@ -60,8 +61,7 @@ public class ArticlesList extends ListActivity {
 				if (feed.feedId != -1) {
 					dialog = ProgressDialog.show(this, "",
 							getString(R.string.loading_dialog), true, false);
-					RSSHandler updateThread = new RSSHandler(feed, this
-							.getApplicationContext(), dialog);
+					RSSHandler updateThread = new RSSHandler(feed, this, dialog, this.getApplicationContext());
 					updateThread.start();
 					updateThread.join();
 				}
@@ -109,6 +109,13 @@ public class ArticlesList extends ListActivity {
 			Log.e("NewsDroid", e.toString());
 		}
 	}
+	
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+		if (dialog != null && dialog.isShowing())
+			dialog.show();
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -124,36 +131,22 @@ public class ArticlesList extends ListActivity {
 		switch (item.getItemId()) {
 		case ACTIVITY_REFRESH:
 			if (feed.feedId != -1) {
-				dialog = ProgressDialog.show(this, "",
-						getString(R.string.loading_dialog));
-				RSSHandler updateThread = new RSSHandler(feed, this
-						.getApplicationContext(), dialog);
-				try {
-					updateThread.start();
-					updateThread.join();
-				} catch (InterruptedException e) {
-					Log.e("NewsDroid", e.toString());
-				}
+				dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog));
+				RSSHandler updateThread = new RSSHandler(feed, this, dialog, this.getApplicationContext());
+				updateThread.start();
 			} else {
 				ArrayList<Feed> feeds = droidDB.getFeeds();
-				dialog = ProgressDialog.show(this, "",
-						getString(R.string.loading_dialog));
-				RSSHandler updateThread = new RSSHandler(feeds, this, dialog);
-				try {
-					updateThread.start();
-					updateThread.join();
-				} catch (InterruptedException e) {
-					Log.e("NewsDroid", e.toString());
-				}
+				dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog));
+				RSSHandler updateThread = new RSSHandler(feeds, this, dialog, this.getApplicationContext());
+				updateThread.start();
 			}
-			fillData();
 			break;
 		}
 
 		return true;
 	}
 
-	private void fillData() {
+	public void fillData() {
 		articles = droidDB.getArticles(feed.feedId);
 		Collections.sort(articles, new Comparator<Article>() {
 			public int compare(Article a1, Article a2) {

@@ -35,6 +35,7 @@ public class RSSHandler extends Thread {
 	private Context ctx;
 	private RSSLoader loader;
 	private ProgressDialog dialog;
+	private IList iList;
 	private static int currentAction;
 	private static AtomicBoolean running = new AtomicBoolean(false);
 	public static final int ACTION_UPDATE_SINGLE_FEED = 0;
@@ -42,19 +43,21 @@ public class RSSHandler extends Thread {
 	public static final int ACTION_INSERT_SINGE_FEED = 2;
 	public static final int ACTION_IMPORT_FEEDS = 3;
 
-	public RSSHandler(Feed f, Context c, ProgressDialog d) {
+	public RSSHandler(Feed f, IList il, ProgressDialog d, Context c) {
 		currentAction = ACTION_UPDATE_SINGLE_FEED;
 		feed = f;
 		ctx = c;
+		iList = il;
 		dialog = d;
 		loader = new RSSLoader();
 	}
 
-	public RSSHandler(ArrayList<Feed> f, Context c, ProgressDialog d) {
+	public RSSHandler(ArrayList<Feed> f, IList il, ProgressDialog d, Context c) {
 		currentAction = ACTION_UPDATE_ALL_FEEDS;
 		feeds = f;
 		ctx = c;
 		dialog = d;
+		iList = il;
 		loader = new RSSLoader();
 	}
 
@@ -132,6 +135,7 @@ public class RSSHandler extends Thread {
 		@Override
 		public void handleMessage(Message msg) {
 			dialog.dismiss();
+			dialog = null;
 			if (msg.what == 1)
 				Toast.makeText(ctx, ctx.getString(R.string.no_internet),
 						Toast.LENGTH_SHORT).show();
@@ -139,6 +143,7 @@ public class RSSHandler extends Thread {
 				Toast.makeText(ctx, ctx.getString(R.string.already_updating),
 						Toast.LENGTH_SHORT).show();
 
+			iList.fillData();
 			running.set(false);
 		}
 	};
