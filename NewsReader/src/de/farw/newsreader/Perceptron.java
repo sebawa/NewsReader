@@ -42,7 +42,7 @@ public class Perceptron {
 		}
 	}
 
-	public int getAssumption(TIntDoubleHashMap x) {
+	public static int getAssumption(TIntDoubleHashMap x) {
 		return sgn(dotProduct(x));
 	}
 
@@ -57,7 +57,7 @@ public class Perceptron {
 		return x;
 	}
 
-	private double dotProduct(TIntDoubleHashMap x) {
+	private static double dotProduct(TIntDoubleHashMap x) {
 		int xSize = x.size();
 		int wSize = w.size();
 		TIntDoubleHashMap s = xSize < wSize ? x : w;

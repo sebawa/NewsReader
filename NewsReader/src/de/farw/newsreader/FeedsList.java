@@ -52,7 +52,7 @@ public class FeedsList extends ListActivity implements IList {
 		if (droidDB != null) {
 			droidDB.close();
 		}
-		BleuAlgorithm.saveBleuData(this);
+		BleuAlgorithm.saveBleuData();
 	}
 	
 	@Override

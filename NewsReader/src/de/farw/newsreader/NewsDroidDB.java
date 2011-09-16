@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -19,6 +20,7 @@ public class NewsDroidDB {
 
 	private static final String FEEDS_TABLE = "feeds";
 	private static final String ARTICLES_TABLE = "articles";
+	private static final String NGRAMS_TABLE = "ngrams";
 	private SQLiteDatabase db;
 	private Context context;
 	private NewsDroidDBHelper helper;
@@ -56,7 +58,8 @@ public class NewsDroidDB {
 		return (db.delete(FEEDS_TABLE, "feed_id=" + feedId.toString(), null) > 0);
 	}
 
-	public boolean insertArticle(Long feedId, String title, URL url, String description, Date date) {
+	public boolean insertArticle(Long feedId, String title, URL url,
+			String description, Date date) {
 		ContentValues values = new ContentValues();
 		long timeNow = 0;
 		int read = 0;
@@ -69,12 +72,12 @@ public class NewsDroidDB {
 		} else {
 			values.put("date", 0);
 		}
-		
+
 		try {
-			Cursor c = db.query(
-					ARTICLES_TABLE, // check if article is already in database
-					new String[] { "read", "known", "date" }, "url=\"" + url + "\"",
-					null, null, null, null);
+			Cursor c = db.query(ARTICLES_TABLE, // check if article is already
+					// in database
+					new String[] { "read", "known", "date" }, "url=\"" + url
+							+ "\"", null, null, null, null);
 			int count = c.getCount();
 			if (count >= 1) {
 				c.moveToFirst();
@@ -96,7 +99,7 @@ public class NewsDroidDB {
 		values.put("read", read);
 		values.put("description", description);
 		values.put("known", known);
-			
+
 		return (db.insert(ARTICLES_TABLE, null, values) > 0);
 	}
 
@@ -128,16 +131,17 @@ public class NewsDroidDB {
 		}
 		return feeds;
 	}
-	
+
 	public int getNumUnread(Long feedId) {
 		try {
 			Cursor c = null;
-			if(feedId >= 0) {
-				c = db.query(ARTICLES_TABLE, new String[] {},
-						"feed_id=" + feedId.toString() + " and read=0", null, null, null, null);
+			if (feedId >= 0) {
+				c = db.query(ARTICLES_TABLE, new String[] {}, "feed_id="
+						+ feedId.toString() + " and read=0", null, null, null,
+						null);
 			} else {
-				c = db.query(ARTICLES_TABLE, new String[] {},
-						"read=0", null, null, null, null);
+				c = db.query(ARTICLES_TABLE, new String[] {}, "read=0", null,
+						null, null, null);
 			}
 			int numRows = c.getCount();
 			c.close();
@@ -154,12 +158,13 @@ public class NewsDroidDB {
 			Cursor c = null;
 			if (feedId >= 0) {
 				c = db.query(ARTICLES_TABLE, new String[] { "article_id",
-						"feed_id", "title", "url", "description", "date", "read" },
-						"feed_id=" + feedId.toString(), null, null, null, null);
+						"feed_id", "title", "url", "description", "date",
+						"read" }, "feed_id=" + feedId.toString(), null, null,
+						null, null);
 			} else {
 				c = db.query(ARTICLES_TABLE, new String[] { "article_id",
-						"feed_id", "title", "url", "description", "date", "read" },
-						"read=0", null, null, null, null);
+						"feed_id", "title", "url", "description", "date",
+						"read" }, "read=0", null, null, null, null);
 			}
 			int numRows = c.getCount();
 			c.moveToFirst();
@@ -191,26 +196,16 @@ public class NewsDroidDB {
 		db.update(ARTICLES_TABLE, values, "article_id=" + articleId, null);
 	}
 
-	public ArrayList<String> getDescriptionById(ArrayList<Long> otherArticlesId) {
-		ArrayList<String> descriptions = new ArrayList<String>();
-		String inQuery = otherArticlesId.toString();
-		inQuery = inQuery.replace('[', '(');
-		inQuery = inQuery.replace(']', ')');
-		try {
-			Cursor c = null;
-			c = db.query(ARTICLES_TABLE, new String[] { "description" },
-					"article_id IN" + inQuery, null, null, null, null, null);
+	public String getDescriptionById(long id) {
+		String ret = "";
+		Cursor c = db.query(ARTICLES_TABLE, new String[] { "description" },
+				"article_id=" + id, null, null, null, null);
+		if (c.getCount() == 1) {
 			c.moveToFirst();
-			assert(c.getCount() == otherArticlesId.size());
-			for (int i = 0; i < c.getCount(); ++i) {
-				descriptions.add(c.getString(0)); 
-				c.moveToNext();
-			}
-			c.close();
-		} catch (SQLException e) {
-			Log.e("NewsDroid", e.toString());
+			ret = c.getString(0);
 		}
-		return descriptions;
+		c.close();
+		return ret;
 	}
 
 	public void markAsKnown(Long articleId) {
@@ -233,10 +228,11 @@ public class NewsDroidDB {
 		db.update(ARTICLES_TABLE, values, "article_id=" + articleId, null);
 	}
 
-	public HashSet<Long> removeOldArticles() {
+	public HashSet<Long> removeOldArticles() { // TODO: ngrams
 		HashSet<Long> oldArticleIds = new HashSet<Long>();
 		try {
-			Cursor c = db.query(ARTICLES_TABLE, new String[] {"article_id"}, "read<"+time, null, null, null, null);
+			Cursor c = db.query(ARTICLES_TABLE, new String[] { "article_id" },
+					"read<" + time, null, null, null, null);
 			c.moveToFirst();
 			for (int i = 0; i < c.getCount(); ++i) {
 				oldArticleIds.add(c.getLong(0));
@@ -261,31 +257,68 @@ public class NewsDroidDB {
 		c.moveToFirst();
 		String known = c.getString(0);
 		c.close();
-		
+
 		if (known.equals("0")) {
 			return 0;
 		}
-		
+
 		return 1;
 	}
-	
+
 	public long getArticleDate(long articleId) {
-		Cursor c = db.query(ARTICLES_TABLE, new String[] {"date"}, "article_id=" + articleId, 
-				null, null, null, null);
+		Cursor c = db.query(ARTICLES_TABLE, new String[] { "date" },
+				"article_id=" + articleId, null, null, null, null);
 		if (c.getCount() == 0) {
 			c.close();
 			return 0;
 		}
-		
+
 		c.moveToFirst();
 		long date = c.getLong(0);
 		c.close();
 		return date;
 	}
-	
+
 	public void setAllRead(long feedID) {
 		ContentValues values = new ContentValues();
 		values.put("read", 1);
-		db.update(ARTICLES_TABLE, values, "feed_id="+feedID, null);
+		db.update(ARTICLES_TABLE, values, "feed_id=" + feedID, null);
+	}
+
+	public void writeNGramsTable(
+			ArrayList<HashMap<String, HashSet<Long>>> readIndex) {
+		ContentValues values = new ContentValues();
+		// for (HashMap<String, HashSet<Long>> map : readIndex) {
+		for (int i = 0; i < 3; ++i) {
+			HashMap<String, HashSet<Long>> map = readIndex.get(i);
+			for (String key : map.keySet()) {
+				for (Long articleId : map.get(key)) {
+					values.put("content", key);
+					values.put("appears_in", articleId);
+					values.put("length", i);
+					db.insert(NGRAMS_TABLE, null, values);
+				}
+			}
+		}
+	}
+
+	public ArrayList<HashMap<String, HashSet<Long>>> readNGramsTable() {
+		ArrayList<HashMap<String, HashSet<Long>>> ret = new ArrayList<HashMap<String, HashSet<Long>>>();
+		for (int i = 0; i < 3; ++i) {
+			HashMap<String, HashSet<Long>> temp = new HashMap<String, HashSet<Long>>();
+			Cursor c = db.query(NGRAMS_TABLE, new String[] { "content",
+					"appears_in" }, "length=" + i, null, null, null, null);
+			c.moveToFirst();
+			for (int j = 0; j < c.getCount(); ++j) {
+				String key = c.getString(0);
+				if (temp.get(key) == null)
+					temp.put(key, new HashSet<Long>());
+				temp.get(key).add(c.getLong(1));
+				c.moveToNext();
+			}
+			c.close();
+			ret.add(temp);
+		}
+		return ret;
 	}
 }

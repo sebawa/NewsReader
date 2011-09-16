@@ -95,7 +95,6 @@ public class ArticlesList extends ListActivity implements IList {
 		String description = currentArticle.description;
 		String title = currentArticle.title;
 		droidDB.setRead(articleId);
-		currentArticle.read = true;
 		TextView titleText = (TextView) v.findViewById(R.id.title);
 		TextView timeText = (TextView) v.findViewById(R.id.time);
 		titleText.setTextColor(Color.DKGRAY);
@@ -107,10 +106,12 @@ public class ArticlesList extends ListActivity implements IList {
 			i.putExtra("title", title);
 			i.putExtra("id", articleId);
 			i.putExtra("feedId", feedId);
+			i.putExtra("read", currentArticle.read);
 			startActivity(i);
 		} catch (Exception e) {
 			Log.e("NewsDroid", e.toString());
 		}
+		currentArticle.read = true;
 	}
 	
 	@Override

@@ -5,6 +5,7 @@ import gnu.trove.map.hash.TIntDoubleHashMap;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,6 +44,7 @@ public class ArticleView extends Activity {
 	private static Perceptron perceptron = null;
 	private TIntDoubleHashMap pX;
 	private boolean learned = false;
+	private boolean read;
 
 	// debugging stuff
 	private FileOutputStream bleuOut = null;
@@ -61,8 +63,10 @@ public class ArticleView extends Activity {
 		super.onMenuItemSelected(featureId, item);
 		switch (item.getItemId()) {
 		case ACTIVITY_READ:
-			perceptron.learnArticle(pX, 1);
-			learned = true;
+			if (read == false && learned == false) {
+				perceptron.learnArticle(pX, 1);
+				learned = true;
+			}
 			NewsDroidDB db = new NewsDroidDB(getApplicationContext());
 			db.open();
 			db.markAsKnown(id);
@@ -81,7 +85,7 @@ public class ArticleView extends Activity {
 		} catch (IOException e) {
 			Log.e("NewsDroid", e.toString());
 		}
-		ba = new BleuAlgorithm(getApplicationContext());
+		ba = BleuAlgorithm.getInstance(getApplicationContext());
 		mWebView = new WebView(this);
 		mWebView.setWebViewClient(new FeedWebViewClient());
 		if (perceptron == null) {
@@ -94,6 +98,7 @@ public class ArticleView extends Activity {
 			title = savedInstanceState.getString("title");
 			id = savedInstanceState.getLong("id");
 			feedId = savedInstanceState.getLong("feedId");
+			read = savedInstanceState.getBoolean("read");
 		} else {
 			Bundle b = getIntent().getExtras();
 			url = b.getString("url");
@@ -101,12 +106,13 @@ public class ArticleView extends Activity {
 			title = b.getString("title");
 			id = b.getLong("id");
 			feedId = b.getLong("feedId");
+			read = b.getBoolean("read");
 		}
 		setTitle(title);
 		bd = ba.scanArticle(content, id);
 		String toDisplay = generateHTMLContent(content, bd.matchingNGrams);
 		pX = Perceptron.generateX(bd.bleuValue, feedId, bd.matchingNGrams.size(), bd.timeDiff);
-		perceptron.getAssumption(pX);
+		Perceptron.getAssumption(pX);
 		mWebView.loadData(toDisplay, "text/html", "utf-8");
 	}
 
@@ -122,7 +128,7 @@ public class ArticleView extends Activity {
 	@Override
 	public void onDestroy() { 
 		super.onDestroy();
-		if (learned == false) {
+		if (read == false && learned == false) {
 			perceptron.learnArticle(pX, -1);
 		}
 		try {
@@ -141,24 +147,11 @@ public class ArticleView extends Activity {
 		}
 	}
 
-	private String encodeHTML(String s) {
-		StringBuffer out = new StringBuffer();
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-			if (c > 127 || c == '"') {
-				out.append("&#" + (int) c + ";");
-			} else {
-				out.append(c);
-			}
-		}
-		return out.toString();
-	}
-
 	private String generateHTMLContent(String in, HashSet<String> matching) {
 		ArrayList<String> tags = new ArrayList<String>();
 		DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
-		final int imageSize = (int) (metrics.widthPixels * 0.95);
+		final int imageSize = (int) (metrics.widthPixels * 0.90);
 
 		in = in.replaceAll("\n", " ");
 		// this pattern should match _all_ HTML tags
@@ -193,7 +186,7 @@ public class ArticleView extends Activity {
 			data = data.replaceFirst(":@:", iter.next());
 		}
 
-		data = encodeHTML(data);
+		data = URLEncoder.encode(data).replaceAll("\\+", " ");
 		String out = "<html><head><style type=\"text/css\">img {max-width:"
 				+ imageSize + "px;}</style></head>";
 		out += "<body>" + data + "<br><br>" + "<a href=" + url + ">"
