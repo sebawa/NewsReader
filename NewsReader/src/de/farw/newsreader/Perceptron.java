@@ -11,27 +11,26 @@ import android.util.Log;
 import gnu.trove.map.hash.TIntDoubleHashMap;
 
 public class Perceptron {
-	private static TIntDoubleHashMap w;
+	private TIntDoubleHashMap w;
 	private static final double alpha = 0.001;
 	private static String wFile = "serializedW";
 	private static Perceptron perceptron = null;
 
 	private Perceptron(Context ctx) {
-		if (w == null) {
-			try {
-				FileInputStream fis = ctx.openFileInput(wFile);
-				ObjectInputStream is = new ObjectInputStream(fis);
-				w.readExternal(is);
-				is.close();
-			} catch (IOException e) {
-				Log.e("NewsDroid", e.toString());
-				w = new TIntDoubleHashMap();
-			} catch (ClassNotFoundException e) {
-				Log.e("NewsDroid", e.toString());
-			}
+		w = new TIntDoubleHashMap();
+		try {
+			FileInputStream fis = ctx.openFileInput(wFile);
+			ObjectInputStream is = new ObjectInputStream(fis);
+			w.readExternal(is);
+			is.close();
+		} catch (IOException e) {
+			Log.e("NewsDroid", e.toString());
+			w = new TIntDoubleHashMap();
+		} catch (ClassNotFoundException e) {
+			Log.e("NewsDroid", e.toString());
 		}
 	}
-	
+
 	public static Perceptron getInstance(Context ctx) {
 		if (perceptron == null) {
 			perceptron = new Perceptron(ctx);
@@ -85,16 +84,15 @@ public class Perceptron {
 	}
 
 	public static void saveW(Context ctx) {
-		if (w == null)
+		if (perceptron == null)
 			return;
 
 		try {
 			FileOutputStream fos = ctx.openFileOutput(wFile,
 					Context.MODE_PRIVATE);
 			ObjectOutputStream os = new ObjectOutputStream(fos);
-			w.writeExternal(os);
+			perceptron.w.writeExternal(os);
 			os.close();
-			w = null;
 		} catch (IOException e) {
 			Log.e("NewsDroid", e.toString());
 		}

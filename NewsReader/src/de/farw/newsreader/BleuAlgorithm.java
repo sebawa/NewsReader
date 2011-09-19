@@ -31,7 +31,7 @@ public class BleuAlgorithm {
 		}
 		if (stopWords == null) {
 			Resources res = ctx.getResources();
-			String[] stopWordsData = res.getStringArray(R.array.stopwords_en);
+			String[] stopWordsData = res.getStringArray(R.array.stopwords);
 			stopWords = new HashSet<String>(Arrays.asList(stopWordsData));
 		}
 	}

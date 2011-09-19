@@ -9,8 +9,7 @@ package de.farw.newsreader;
 
 public final class R {
     public static final class array {
-        public static final int stopwords_de=0x7f040001;
-        public static final int stopwords_en=0x7f040000;
+        public static final int stopwords=0x7f040000;
     }
     public static final class attr {
     }
