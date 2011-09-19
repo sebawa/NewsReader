@@ -1,5 +1,7 @@
 package de.farw.newsreader;
 
+import gnu.trove.map.hash.TIntDoubleHashMap;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -91,7 +93,6 @@ public class ArticlesList extends ListActivity implements IList {
 		Article currentArticle = articles.get(position);
 		String uri = currentArticle.url.toString();
 		Long articleId = currentArticle.articleId;
-		Long feedId = currentArticle.feedId;
 		String description = currentArticle.description;
 		String title = currentArticle.title;
 		droidDB.setRead(articleId);
@@ -99,14 +100,20 @@ public class ArticlesList extends ListActivity implements IList {
 		TextView timeText = (TextView) v.findViewById(R.id.time);
 		titleText.setTextColor(Color.DKGRAY);
 		timeText.setTextColor(Color.DKGRAY);
+		if (currentArticle.bleuData == null)
+			currentArticle.bleuData = new BleuData();
+		
 		try {
 			Intent i = new Intent(this, ArticleView.class);
 			i.putExtra("url", uri);
 			i.putExtra("description", description);
 			i.putExtra("title", title);
 			i.putExtra("id", articleId);
-			i.putExtra("feedId", feedId);
 			i.putExtra("read", currentArticle.read);
+			i.putStringArrayListExtra("words", new ArrayList<String>(currentArticle.bleuData.matchingNGrams));
+			i.putExtra("feedId", currentArticle.feedId);
+			i.putExtra("bleu", currentArticle.bleuData.bleuValue);
+			i.putExtra("time", currentArticle.bleuData.timeDiff);
 			startActivity(i);
 		} catch (Exception e) {
 			Log.e("NewsDroid", e.toString());
@@ -174,6 +181,8 @@ public class ArticlesList extends ListActivity implements IList {
 		private ArrayList<Article> items;
 		private SimpleDateFormat dayformat;
 		private SimpleDateFormat timeformat;
+		private BleuAlgorithm ba;
+		private Perceptron perceptron;
 
 		public ArticleAdapter(Context context, int textViewResourceId,
 				ArrayList<Article> items) {
@@ -181,6 +190,8 @@ public class ArticlesList extends ListActivity implements IList {
 			this.items = items;
 			dayformat = new SimpleDateFormat("dd.MMM");
 			timeformat = new SimpleDateFormat("HH:mm");
+			ba = BleuAlgorithm.getInstance(getApplicationContext());
+			perceptron = Perceptron.getInstance(getApplicationContext());
 		}
 
 		@Override
@@ -196,12 +207,21 @@ public class ArticlesList extends ListActivity implements IList {
 				TextView time = (TextView) v.findViewById(R.id.time);
 				title.setText(a.title);
 				time.setText(generateTimeString(a.date));
-				if(a.read) {
+				if (a.read) {
 					title.setTextColor(Color.DKGRAY);
 					time.setTextColor(Color.DKGRAY);
 				} else {
-					title.setTextColor(Color.LTGRAY);
-					time.setTextColor(Color.LTGRAY);
+					BleuData bd = ba.scanArticle(a.description, a.articleId);
+					TIntDoubleHashMap x = perceptron.generateX(bd.bleuValue, a.feedId, bd.matchingNGrams.size(), bd.timeDiff);
+					int pred = perceptron.getAssumption(x);
+					a.bleuData = bd;
+					if (pred == -1) {
+						title.setTextColor(Color.YELLOW);
+						time.setTextColor(Color.YELLOW);
+					} else {
+						title.setTextColor(Color.LTGRAY);
+						time.setTextColor(Color.LTGRAY);
+					}
 				}
 			}
 			return v;

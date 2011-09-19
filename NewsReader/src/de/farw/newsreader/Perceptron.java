@@ -1,7 +1,6 @@
 package de.farw.newsreader;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,8 +14,9 @@ public class Perceptron {
 	private static TIntDoubleHashMap w;
 	private static final double alpha = 0.001;
 	private static String wFile = "serializedW";
+	private static Perceptron perceptron = null;
 
-	public Perceptron(Context ctx) {
+	private Perceptron(Context ctx) {
 		if (w == null) {
 			try {
 				FileInputStream fis = ctx.openFileInput(wFile);
@@ -31,6 +31,13 @@ public class Perceptron {
 			}
 		}
 	}
+	
+	public static Perceptron getInstance(Context ctx) {
+		if (perceptron == null) {
+			perceptron = new Perceptron(ctx);
+		}
+		return perceptron;
+	}
 
 	public void learnArticle(TIntDoubleHashMap x, int y) {
 		int yA = sgn(dotProduct(x));
@@ -42,11 +49,11 @@ public class Perceptron {
 		}
 	}
 
-	public static int getAssumption(TIntDoubleHashMap x) {
+	public int getAssumption(TIntDoubleHashMap x) {
 		return sgn(dotProduct(x));
 	}
 
-	public static TIntDoubleHashMap generateX(double bleuValue, long feedId,
+	public TIntDoubleHashMap generateX(double bleuValue, long feedId,
 			int commonWords, long timeDiff) {
 		TIntDoubleHashMap x = new TIntDoubleHashMap();
 		x.put(0, bleuValue);
@@ -57,7 +64,7 @@ public class Perceptron {
 		return x;
 	}
 
-	private static double dotProduct(TIntDoubleHashMap x) {
+	private double dotProduct(TIntDoubleHashMap x) {
 		int xSize = x.size();
 		int wSize = w.size();
 		TIntDoubleHashMap s = xSize < wSize ? x : w;
@@ -72,7 +79,7 @@ public class Perceptron {
 		return sum;
 	}
 
-	private static int sgn(double in) {
+	private int sgn(double in) {
 		int retVal = in < 0.0 ? (-1) : 1;
 		return retVal;
 	}
@@ -88,10 +95,9 @@ public class Perceptron {
 			w.writeExternal(os);
 			os.close();
 			w = null;
-		} catch (FileNotFoundException e) {
-			Log.e("NewsDroid", e.toString());
 		} catch (IOException e) {
 			Log.e("NewsDroid", e.toString());
 		}
+		perceptron = null;
 	}
 }

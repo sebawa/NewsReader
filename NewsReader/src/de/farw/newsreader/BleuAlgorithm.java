@@ -10,18 +10,6 @@ import android.content.Context;
 import android.content.res.Resources;
 
 public class BleuAlgorithm {
-	public class BleuData {
-		public double bleuValue;
-		public long timeDiff;
-		public HashSet<String> matchingNGrams;
-
-		public BleuData() {
-			matchingNGrams = new HashSet<String>();
-			bleuValue = 0.0;
-			timeDiff = 0;
-		}
-	}
-
 	private ArrayList<HashMap<String, HashSet<Long>>> readIndex;
 	private HashSet<String> stopWords = null;
 	private NewsDroidDB db;
@@ -92,6 +80,8 @@ public class BleuAlgorithm {
 	}
 
 	public static void saveBleuData() {
+		if (bleuInstance == null)
+			return;
 		bleuInstance.db.writeNGramsTable(bleuInstance.readIndex);
 		bleuInstance.db.close();
 		bleuInstance = null;

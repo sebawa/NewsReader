@@ -288,7 +288,6 @@ public class NewsDroidDB {
 	public void writeNGramsTable(
 			ArrayList<HashMap<String, HashSet<Long>>> readIndex) {
 		ContentValues values = new ContentValues();
-		// for (HashMap<String, HashSet<Long>> map : readIndex) {
 		for (int i = 0; i < 3; ++i) {
 			HashMap<String, HashSet<Long>> map = readIndex.get(i);
 			for (String key : map.keySet()) {

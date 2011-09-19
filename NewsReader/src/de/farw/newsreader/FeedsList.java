@@ -53,6 +53,7 @@ public class FeedsList extends ListActivity implements IList {
 			droidDB.close();
 		}
 		BleuAlgorithm.saveBleuData();
+		Perceptron.saveW(getApplicationContext());
 	}
 	
 	@Override

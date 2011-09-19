@@ -2,17 +2,12 @@ package de.farw.newsreader;
 
 import gnu.trove.map.hash.TIntDoubleHashMap;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.farw.newsreader.BleuAlgorithm.BleuData;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -33,22 +28,17 @@ public class ArticleView extends Activity {
 
 	private static final int ACTIVITY_READ = 0;
 
-	private BleuAlgorithm ba;
 	private WebView mWebView;
 	private String url;
 	private long id;
-	private long feedId;
 	private String title;
 	private String content;
-	private BleuData bd;
-	private static Perceptron perceptron = null;
-	private TIntDoubleHashMap pX;
 	private boolean learned = false;
 	private boolean read;
-
-	// debugging stuff
-	private FileOutputStream bleuOut = null;
-	private OutputStreamWriter osw = null;
+	private ArrayList<String> commonWords;
+	private long feedId;
+	private double bleuVal;
+	private long timeDiff;
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -64,6 +54,8 @@ public class ArticleView extends Activity {
 		switch (item.getItemId()) {
 		case ACTIVITY_READ:
 			if (read == false && learned == false) {
+				Perceptron perceptron = Perceptron.getInstance(this);
+				TIntDoubleHashMap pX = perceptron.generateX(bleuVal, feedId, commonWords.size(), timeDiff);
 				perceptron.learnArticle(pX, 1);
 				learned = true;
 			}
@@ -79,41 +71,38 @@ public class ArticleView extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		try {
-			bleuOut = openFileOutput("bleu.txt", MODE_APPEND);
-			osw = new OutputStreamWriter(bleuOut);
-		} catch (IOException e) {
-			Log.e("NewsDroid", e.toString());
-		}
-		ba = BleuAlgorithm.getInstance(getApplicationContext());
 		mWebView = new WebView(this);
 		mWebView.setWebViewClient(new FeedWebViewClient());
-		if (perceptron == null) {
-			perceptron = new Perceptron(this);
-		}
 		setContentView(mWebView);
 		if (savedInstanceState != null) {
 			url = savedInstanceState.getString("url");
 			content = savedInstanceState.getString("description");
 			title = savedInstanceState.getString("title");
 			id = savedInstanceState.getLong("id");
-			feedId = savedInstanceState.getLong("feedId");
 			read = savedInstanceState.getBoolean("read");
+			commonWords = savedInstanceState.getStringArrayList("words");
+			feedId = savedInstanceState.getLong("feedId");
+			bleuVal = savedInstanceState.getDouble("bleu");
+			timeDiff = savedInstanceState.getLong("time");
 		} else {
 			Bundle b = getIntent().getExtras();
 			url = b.getString("url");
 			content = b.getString("description");
 			title = b.getString("title");
 			id = b.getLong("id");
-			feedId = b.getLong("feedId");
 			read = b.getBoolean("read");
+			commonWords = b.getStringArrayList("words");
+			feedId = b.getLong("feedId");
+			bleuVal = b.getDouble("bleu");
+			timeDiff = b.getLong("time");
 		}
 		setTitle(title);
-		bd = ba.scanArticle(content, id);
-		String toDisplay = generateHTMLContent(content, bd.matchingNGrams);
-		pX = Perceptron.generateX(bd.bleuValue, feedId, bd.matchingNGrams.size(), bd.timeDiff);
-		Perceptron.getAssumption(pX);
+		String toDisplay = generateHTMLContent(content, commonWords);
+		try {
 		mWebView.loadData(toDisplay, "text/html", "utf-8");
+		} catch (Exception e) {
+			Log.e("NewsDroid", e.toString());
+		}
 	}
 
 	@Override
@@ -123,31 +112,31 @@ public class ArticleView extends Activity {
 		outState.putString("description", content);
 		outState.putString("title", title);
 		outState.putLong("id", id);
+		outState.putBoolean("read", read);
+		outState.putStringArrayList("words", commonWords);
+		outState.putLong("feedId", feedId);
+		outState.putDouble("bleu", bleuVal);
+		outState.putLong("time", timeDiff);
 	}
 
 	@Override
 	public void onDestroy() { 
 		super.onDestroy();
 		if (read == false && learned == false) {
+			Perceptron perceptron = Perceptron.getInstance(this);
+			TIntDoubleHashMap pX = perceptron.generateX(bleuVal, feedId, commonWords.size(), timeDiff);
 			perceptron.learnArticle(pX, -1);
 		}
 		try {
 			NewsDroidDB db = new NewsDroidDB(this);
 			db.open();
-			int known = db.getArticleRead(id);
-			osw.write(String.valueOf(bd.bleuValue) + ' ' + known + '\n');
-			osw.flush();
-			osw.close();
-			bleuOut.close();
 			db.close();
-		} catch (IOException e) {
-			Log.e("NewsDroid", e.toString());
 		} catch (RuntimeException e) {
 			Log.e("NewsDroid", e.toString());
 		}
 	}
 
-	private String generateHTMLContent(String in, HashSet<String> matching) {
+	private String generateHTMLContent(String in, ArrayList<String> commonWords) {
 		ArrayList<String> tags = new ArrayList<String>();
 		DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -167,7 +156,7 @@ public class ArticleView extends Activity {
 
 		StringBuffer sb = new StringBuffer(fromHTML);
 		String buffer = fromHTML.toString();
-		for (String match : matching) {
+		for (String match : commonWords) {
 			sb = new StringBuffer();
 			Pattern p = Pattern.compile("(?i)\\b" + match + "[\\p{Punct}\\p{Space}]+?");
 			Matcher m = p.matcher(buffer);

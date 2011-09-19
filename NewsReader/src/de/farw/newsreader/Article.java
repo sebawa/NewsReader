@@ -11,5 +11,6 @@ class Article extends Object {
 	public String description;
 	public Date date;
 	public boolean read;
+	BleuData bleuData;
 }
 
