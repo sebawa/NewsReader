@@ -143,6 +143,11 @@ public class ArticleView extends Activity {
 		final int imageSize = (int) (metrics.widthPixels * 0.90);
 
 		in = in.replaceAll("\n", " ");
+		try {
+		in = in.replaceAll("\\\\", "@backslash@");
+		} catch (RuntimeException e) {
+			Log.e("NewsDroid", e.toString());
+		}
 		// this pattern should match _all_ HTML tags
 		Pattern pTag = Pattern
 				.compile("</?\\w+((\\s+\\w+(\\s*=\\s*(?:\".*?\"|'.*?'|[^'\">\\s]+))?)+\\s*|\\s*)/?>|&[\\p{Alnum}]*?;");
@@ -174,10 +179,11 @@ public class ArticleView extends Activity {
 		while (iter.hasNext()) {
 			data = data.replaceFirst(":@:", iter.next());
 		}
+		data = data.replaceAll("@backslash@", "\\\\");
 
 		data = URLEncoder.encode(data).replaceAll("\\+", " ");
 		String out = "<html><head><style type=\"text/css\">img {max-width:"
-				+ imageSize + "px;}</style></head>";
+				+ imageSize + "px;}</style><meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\"></head>";
 		out += "<body>" + data + "<br><br>" + "<a href=" + url + ">"
 				+ getString(R.string.read_more) + "</a></body></html>";
 

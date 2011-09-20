@@ -264,7 +264,7 @@ public class RSSHandler extends Thread {
 					if (inTitle)
 						currentFeed.title += chars;
 				} else {
-					if (inLink)
+					if (inLink && currentArticle.url == null)
 						currentArticle.url = new URL(chars);
 					if (inTitle)
 						currentArticle.title += chars;

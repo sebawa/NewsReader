@@ -66,7 +66,7 @@ public class ArticlesList extends ListActivity implements IList {
 							getString(R.string.loading_dialog), true, false);
 					RSSHandler updateThread = new RSSHandler(feed, this, dialog, this.getApplicationContext());
 					updateThread.start();
-					updateThread.join();
+//					updateThread.join();
 				}
 			}
 			setTitle(feed.title);
@@ -74,8 +74,8 @@ public class ArticlesList extends ListActivity implements IList {
 			fillData();
 		} catch (MalformedURLException e) {
 			Log.e("NewsDroid", e.toString());
-		} catch (InterruptedException e) {
-			Log.e("NewsDroid", e.toString());
+//		} catch (InterruptedException e) {
+//			Log.e("NewsDroid", e.toString());
 		}
 	}
 
