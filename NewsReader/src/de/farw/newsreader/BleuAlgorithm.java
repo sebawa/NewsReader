@@ -26,9 +26,6 @@ public class BleuAlgorithm {
 		db = new NewsDroidDB(ctx);
 		db.open();
 		readIndex = db.readNGramsTable();// new ArrayList<HashMap<String, HashSet<Long>>>(3);
-		for (int i = 0; i < 3; ++i) {
-			readIndex.add(new HashMap<String, HashSet<Long>>());
-		}
 		if (stopWords == null) {
 			Resources res = ctx.getResources();
 			String[] stopWordsData = res.getStringArray(R.array.stopwords);
@@ -54,7 +51,7 @@ public class BleuAlgorithm {
 			for (Long b : tempScore.keySet()) { 
 				Double bs = bScore.get(b);
 				Double ts = tempScore.get(b);
-				if (bs != null )
+				if (bs != null)
 					bScore.put(b, bs + ts/cSubList.size());
 				else
 					bScore.put(b, ts / cSubList.size());
@@ -72,7 +69,7 @@ public class BleuAlgorithm {
 			}
 		}
 		if (maxID != -1) {
-			bd.matchingNGrams = findCommonWords(id, maxID);
+			bd.matchingNGrams = findCommonWords(id, maxID); // TODO: replace it, as it's very slow
 			bd.timeDiff = Math.abs(db.getArticleDate(id) - db.getArticleDate(maxID));
 		}
 
@@ -99,7 +96,11 @@ public class BleuAlgorithm {
 	}
 
 	private ArrayList<ArrayList<String>> generateNGrams(String in, long id) {
-		ArrayList<ArrayList<String>> foundNGrams = new ArrayList<ArrayList<String>>(3);
+		ArrayList<ArrayList<String>> foundNGrams = db.getNGramsById(id);
+		if (foundNGrams != null)
+			return foundNGrams;
+		
+		foundNGrams = new ArrayList<ArrayList<String>>(3);
 		for (int i = 0; i < 3; ++i) {
 			foundNGrams.add(new ArrayList<String>());
 		}

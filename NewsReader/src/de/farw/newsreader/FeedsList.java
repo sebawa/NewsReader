@@ -108,12 +108,9 @@ public class FeedsList extends ListActivity implements IList {
 				Log.e("NewsReader", e.toString());
 			}
 			
-//			for(String feed: handler.feeds) {
 			RSSHandler rh = new RSSHandler(handler.feeds, dialog, context);
 			rh.start();
 		}
-				
-//		}
 
 		return true;
 	}

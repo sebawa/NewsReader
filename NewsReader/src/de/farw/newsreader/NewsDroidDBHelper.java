@@ -13,10 +13,10 @@ public class NewsDroidDBHelper extends SQLiteOpenHelper {
 		+ "feed_id int not null, title text not null, url text not null, read integer not null, description text, date integer, known string, unique(url) on conflict ignore);";
 	
 	private static final String CREATE_TABLE_NGRAMS = "create table ngrams (ngram_id integer primary key autoincrement, "
-		+ "content text not null, appears_in integer not null, length integer not null);";
+		+ "content text not null, appears_in integer not null, length integer not null, unique(content, appears_in) on conflict ignore);";
 
 	private static final String DATABASE_NAME = "newdroid";
-	private static final int DATABASE_VERSION = 10;
+	private static final int DATABASE_VERSION = 11;
 
 	public NewsDroidDBHelper(Context ctx) {
 		super(ctx, DATABASE_NAME, null, DATABASE_VERSION);

@@ -320,4 +320,27 @@ public class NewsDroidDB {
 		}
 		return ret;
 	}
+	
+	public ArrayList<ArrayList<String>> getNGramsById(long id) {
+		ArrayList<ArrayList<String>> ret = new ArrayList<ArrayList<String>>();
+		for (int i = 0; i < 3; ++i) {
+			ArrayList<String> temp = new ArrayList<String>();
+			Cursor c = db.query(NGRAMS_TABLE, new String[] {"content"}, "appears_in="+id+" and length="+i, null, null, null, null);
+			final int count = c.getCount();
+			if (count > 0) {
+				c.moveToFirst();
+				for (int k = 0; k < count; ++k) {
+					temp.add(c.getString(0));
+					c.moveToNext();
+				}
+				ret.add(temp);
+			}
+			c.close();
+			if (count == 0)
+				return null;
+			
+		}
+		
+		return ret;
+	}
 }
