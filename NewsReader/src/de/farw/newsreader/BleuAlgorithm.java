@@ -75,6 +75,30 @@ public class BleuAlgorithm {
 
 		return bd;
 	}
+	
+	public BleuData updateBleu(Article a, Article removed) {
+		ArrayList<ArrayList<String>> removedNGrams = generateNGrams(removed.description, removed.articleId);
+		double newScore = 0.0;
+		for (int i = 0; i < 3; ++i) {
+			HashMap<String, HashSet<Long>> cSubList = readIndex.get(i);
+			double tempScore = 0.0;
+			for (String cngram : removedNGrams.get(i)) {
+				if (cSubList.get(cngram).contains(a.articleId)) {
+					tempScore += 1;
+				}
+			}
+			newScore += tempScore / cSubList.size();
+		}
+		newScore /= 3;
+		if (newScore > a.bleuData.bleuValue) {
+			BleuData bd = new BleuData();
+			bd.bleuValue = newScore;
+			bd.matchingNGrams = findCommonWords(a.articleId, removed.articleId);
+			bd.timeDiff = Math.abs(db.getArticleDate(a.articleId) - db.getArticleDate(removed.articleId));
+			return bd;
+		}
+		return null;
+	}
 
 	public static void saveBleuData() {
 		if (bleuInstance == null)
