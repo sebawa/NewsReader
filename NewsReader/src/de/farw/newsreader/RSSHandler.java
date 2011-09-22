@@ -83,6 +83,7 @@ public class RSSHandler extends Thread {
 		}
 
 		if (hasInternet() == false) {
+			running.set(false);
 			handler.sendEmptyMessage(1);
 			return;
 		}
@@ -136,15 +137,18 @@ public class RSSHandler extends Thread {
 		public void handleMessage(Message msg) {
 			dialog.dismiss();
 			dialog = null;
-			if (msg.what == 1)
+			if (msg.what == 0) {
+				iList.fillData();
+				running.set(false);
+			}
+			else if (msg.what == 1) {
 				Toast.makeText(ctx, ctx.getString(R.string.no_internet),
 						Toast.LENGTH_SHORT).show();
-			if (msg.what == 2)
+			}
+			else if (msg.what == 2) {
 				Toast.makeText(ctx, ctx.getString(R.string.already_updating),
 						Toast.LENGTH_SHORT).show();
-
-			iList.fillData();
-			running.set(false);
+			}
 		}
 	};
 

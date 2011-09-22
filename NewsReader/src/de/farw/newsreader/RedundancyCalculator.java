@@ -7,6 +7,7 @@ import java.util.Stack;
 import java.util.concurrent.Semaphore;
 
 import android.content.Context;
+import android.os.Handler;
 
 public class RedundancyCalculator extends Thread {
 	private class ArticleBox {
@@ -17,7 +18,7 @@ public class RedundancyCalculator extends Thread {
 			article = a;
 			compareAgainst = null;
 		}
-		
+
 		public ArticleBox(Article a, Article c) {
 			article = a;
 			compareAgainst = c;
@@ -32,28 +33,32 @@ public class RedundancyCalculator extends Thread {
 		}
 	}
 
-	private Stack<ArticleBox> waitingArticles;
-	private HashSet<Article> processedArticles;
+	private volatile Stack<ArticleBox> waitingArticles;
+	private volatile HashSet<Article> processedArticles;
 	private BleuAlgorithm ba;
-	private Perceptron percepron;
-	private Object processedLock;
-	private Object waitingLock;
-	private Semaphore sem;
-	private static RedundancyCalculator instance = null;
+	private Perceptron perceptron;
+	private volatile Object processedLock;
+	private volatile Object waitingLock;
+	private volatile Semaphore sem;
+	private Handler callback;
+	private static volatile RedundancyCalculator instance = null;
 
-	private RedundancyCalculator(Context ctx) {
-		waitingArticles = new Stack<ArticleBox>();
+	private RedundancyCalculator(Context ctx, Handler ialc) {
 		processedArticles = new HashSet<Article>();
-		ba = BleuAlgorithm.getInstance(ctx);
-		percepron = Perceptron.getInstance(ctx);
+		waitingArticles = new Stack<ArticleBox>();
 		processedLock = new Object();
 		waitingLock = new Object();
+		perceptron = Perceptron.getInstance(ctx);
+		callback = ialc;
 		sem = new Semaphore(0);
+		ba = BleuAlgorithm.getInstance(ctx);
 	}
 
-	public RedundancyCalculator getInstance(Context ctx) {
+	public static RedundancyCalculator initOrGet(Context ctx,
+			Handler ialc) {
 		if (instance == null) {
-			instance = new RedundancyCalculator(ctx);
+			instance = new RedundancyCalculator(ctx, ialc);
+			instance.start();
 		}
 		return instance;
 	}
@@ -81,23 +86,30 @@ public class RedundancyCalculator extends Thread {
 			if (a.isRead())
 				continue;
 
+			synchronized (processedLock) {
+				if (processedArticles.contains(a))
+					continue;
+			}
+
 			BleuData bd = null;
 			if (a.needsUpdate() == false) {
 				bd = ba.scanArticle(a.article.description, a.article.articleId);
-				TIntDoubleHashMap x = percepron
+				TIntDoubleHashMap x = perceptron
 						.generateX(bd.bleuValue, a.article.feedId,
 								bd.matchingNGrams.size(), bd.timeDiff);
 				a.article.bleuData = bd;
-				int pred = percepron.getAssumption(x);
+				a.article.perceptronPrediction = perceptron.getAssumption(x);
 			} else {
 				bd = ba.updateBleu(a.article, a.compareAgainst);
 				if (bd != null)
 					a.article.bleuData = bd;
 				BleuData temp = a.article.bleuData;
-				TIntDoubleHashMap x = percepron.generateX(temp.bleuValue, a.article.feedId, 
-						temp.matchingNGrams.size(), temp.timeDiff);
-				int pred = percepron.getAssumption(x);
+				TIntDoubleHashMap x = perceptron.generateX(temp.bleuValue,
+						a.article.feedId, temp.matchingNGrams.size(),
+						temp.timeDiff);
+				a.article.perceptronPrediction = perceptron.getAssumption(x);
 			}
+			callback.sendEmptyMessage(0);
 
 			synchronized (processedLock) {
 				processedArticles.add(a.article);

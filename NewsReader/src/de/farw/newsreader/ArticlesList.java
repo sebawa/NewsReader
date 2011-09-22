@@ -1,7 +1,5 @@
 package de.farw.newsreader;
 
-import gnu.trove.map.hash.TIntDoubleHashMap;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -18,17 +16,20 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class ArticlesList extends ListActivity implements IList {
+public class ArticlesList extends ListActivity implements IList, ListView.OnScrollListener {
 
 	private static final int ACTIVITY_REFRESH = 1;
 	private static final int ACTIVITY_READ = 2;
@@ -38,6 +39,16 @@ public class ArticlesList extends ListActivity implements IList {
 	private ArticleAdapter adapter;
 	private ArrayList<Article> items;
 	private ProgressDialog dialog;
+    
+	
+    private Handler handler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			if (msg.what == 0) {
+				adapter.notifyDataSetChanged();
+			}
+		}
+	};
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -50,6 +61,7 @@ public class ArticlesList extends ListActivity implements IList {
 			items = new ArrayList<Article>();
 			adapter = new ArticleAdapter(this, R.layout.article_row, items);
 			setListAdapter(adapter);
+			getListView().setOnScrollListener(this);
 
 			if (icicle != null) {
 				feed.feedId = icicle.getLong("feed_id");
@@ -64,9 +76,9 @@ public class ArticlesList extends ListActivity implements IList {
 				if (feed.feedId != -1) {
 					dialog = ProgressDialog.show(this, "",
 							getString(R.string.loading_dialog), true, false);
-					RSSHandler updateThread = new RSSHandler(feed, this, dialog, this.getApplicationContext());
+					RSSHandler updateThread = new RSSHandler(feed, this,
+							dialog, this.getApplicationContext());
 					updateThread.start();
-//					updateThread.join();
 				}
 			}
 			setTitle(feed.title);
@@ -74,8 +86,6 @@ public class ArticlesList extends ListActivity implements IList {
 			fillData();
 		} catch (MalformedURLException e) {
 			Log.e("NewsDroid", e.toString());
-//		} catch (InterruptedException e) {
-//			Log.e("NewsDroid", e.toString());
 		}
 	}
 
@@ -100,9 +110,11 @@ public class ArticlesList extends ListActivity implements IList {
 		TextView timeText = (TextView) v.findViewById(R.id.time);
 		titleText.setTextColor(Color.DKGRAY);
 		timeText.setTextColor(Color.DKGRAY);
+		RedundancyCalculator redcal = RedundancyCalculator.initOrGet(this, handler);
+		redcal.articleRead(currentArticle);
 		if (currentArticle.bleuData == null)
 			currentArticle.bleuData = new BleuData();
-		
+
 		try {
 			Intent i = new Intent(this, ArticleView.class);
 			i.putExtra("url", uri);
@@ -110,7 +122,8 @@ public class ArticlesList extends ListActivity implements IList {
 			i.putExtra("title", title);
 			i.putExtra("id", articleId);
 			i.putExtra("read", currentArticle.read);
-			i.putStringArrayListExtra("words", new ArrayList<String>(currentArticle.bleuData.matchingNGrams));
+			i.putStringArrayListExtra("words", new ArrayList<String>(
+					currentArticle.bleuData.matchingNGrams));
 			i.putExtra("feedId", currentArticle.feedId);
 			i.putExtra("bleu", currentArticle.bleuData.bleuValue);
 			i.putExtra("time", currentArticle.bleuData.timeDiff);
@@ -120,7 +133,7 @@ public class ArticlesList extends ListActivity implements IList {
 		}
 		currentArticle.read = true;
 	}
-	
+
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
@@ -143,13 +156,17 @@ public class ArticlesList extends ListActivity implements IList {
 		switch (item.getItemId()) {
 		case ACTIVITY_REFRESH:
 			if (feed.feedId != -1) {
-				dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog));
-				RSSHandler updateThread = new RSSHandler(feed, this, dialog, this.getApplicationContext());
+				dialog = ProgressDialog.show(this, "",
+						getString(R.string.loading_dialog));
+				RSSHandler updateThread = new RSSHandler(feed, this, dialog,
+						this.getApplicationContext());
 				updateThread.start();
 			} else {
 				ArrayList<Feed> feeds = droidDB.getFeeds();
-				dialog = ProgressDialog.show(this, "", getString(R.string.loading_dialog));
-				RSSHandler updateThread = new RSSHandler(feeds, this, dialog, this.getApplicationContext());
+				dialog = ProgressDialog.show(this, "",
+						getString(R.string.loading_dialog));
+				RSSHandler updateThread = new RSSHandler(feeds, this, dialog,
+						this.getApplicationContext());
 				updateThread.start();
 			}
 			break;
@@ -176,13 +193,25 @@ public class ArticlesList extends ListActivity implements IList {
 		adapter.notifyDataSetChanged();
 	}
 
+	public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+		if (visibleItemCount == 0)
+			return;
+		RedundancyCalculator redcal = RedundancyCalculator.initOrGet(this, handler);
+		for (int i = 0; i < visibleItemCount; ++i) {
+			Article temp = articles.get(firstVisibleItem + i);
+			if (temp.read == false)
+				redcal.addArticle(temp);
+		}
+	}
+
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+	}
+
 	private class ArticleAdapter extends ArrayAdapter<Article> {
 
 		private ArrayList<Article> items;
 		private SimpleDateFormat dayformat;
 		private SimpleDateFormat timeformat;
-		private BleuAlgorithm ba;
-		private Perceptron perceptron;
 
 		public ArticleAdapter(Context context, int textViewResourceId,
 				ArrayList<Article> items) {
@@ -190,8 +219,6 @@ public class ArticlesList extends ListActivity implements IList {
 			this.items = items;
 			dayformat = new SimpleDateFormat("dd.MMM");
 			timeformat = new SimpleDateFormat("HH:mm");
-			ba = BleuAlgorithm.getInstance(getApplicationContext());
-			perceptron = Perceptron.getInstance(getApplicationContext());
 		}
 
 		@Override
@@ -210,18 +237,12 @@ public class ArticlesList extends ListActivity implements IList {
 				if (a.read) {
 					title.setTextColor(Color.DKGRAY);
 					time.setTextColor(Color.DKGRAY);
+				} else if (a.perceptronPrediction == -1) {
+					title.setTextColor(Color.YELLOW);
+					time.setTextColor(Color.YELLOW);
 				} else {
-					BleuData bd = ba.scanArticle(a.description, a.articleId);
-					TIntDoubleHashMap x = perceptron.generateX(bd.bleuValue, a.feedId, bd.matchingNGrams.size(), bd.timeDiff);
-					int pred = perceptron.getAssumption(x);
-					a.bleuData = bd;
-					if (pred == -1) {
-						title.setTextColor(Color.YELLOW);
-						time.setTextColor(Color.YELLOW);
-					} else {
-						title.setTextColor(Color.LTGRAY);
-						time.setTextColor(Color.LTGRAY);
-					}
+					title.setTextColor(Color.LTGRAY);
+					time.setTextColor(Color.LTGRAY);
 				}
 			}
 			return v;

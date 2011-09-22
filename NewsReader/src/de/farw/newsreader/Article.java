@@ -10,7 +10,8 @@ class Article extends Object {
 	public URL url;
 	public String description;
 	public Date date;
-	public boolean read;
-	BleuData bleuData;
+	public volatile boolean read;
+	public volatile BleuData bleuData;
+	public volatile int perceptronPrediction;
 }
 
