@@ -26,7 +26,8 @@ public class ArticleView extends Activity {
 		}
 	}
 
-	private static final int ACTIVITY_READ = 0;
+	private static final int ACTIVITY_KNOWN = 0;
+	private static final int ACTIVITY_NOT_KNOWN = 1;
 
 	private WebView mWebView;
 	private String url;
@@ -39,11 +40,13 @@ public class ArticleView extends Activity {
 	private long feedId;
 	private double bleuVal;
 	private long timeDiff;
+	private int perceptronPrediction;
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
-		menu.add(0, ACTIVITY_READ, android.view.Menu.NONE, R.string.menu_read);
+		menu.add(0, ACTIVITY_KNOWN, android.view.Menu.NONE, R.string.menu_know);
+		menu.add(0, ACTIVITY_NOT_KNOWN, android.view.Menu.NONE, R.string.menu_dont_know);
 
 		return true;
 	}
@@ -51,19 +54,19 @@ public class ArticleView extends Activity {
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		super.onMenuItemSelected(featureId, item);
-		switch (item.getItemId()) {
-		case ACTIVITY_READ:
-			if (read == false && learned == false) {
+		final int itemId = item.getItemId();
+		if (itemId == ACTIVITY_KNOWN || itemId == ACTIVITY_NOT_KNOWN) {
+			int learnVal = itemId == ACTIVITY_KNOWN ? 1 : -1;
+			if (read == false && learned == false && learnVal != perceptronPrediction && perceptronPrediction != 0) {
 				Perceptron perceptron = Perceptron.getInstance(this);
 				TIntDoubleHashMap pX = perceptron.generateX(bleuVal, feedId, commonWords.size(), timeDiff);
-				perceptron.learnArticle(pX, 1);
+				perceptron.learnArticle(pX, learnVal);
 				learned = true;
 			}
 			NewsDroidDB db = new NewsDroidDB(getApplicationContext());
 			db.open();
 			db.markAsKnown(id);
 			db.close();
-			break;
 		}
 		return true;
 	}
@@ -84,6 +87,7 @@ public class ArticleView extends Activity {
 			feedId = savedInstanceState.getLong("feedId");
 			bleuVal = savedInstanceState.getDouble("bleu");
 			timeDiff = savedInstanceState.getLong("time");
+			perceptronPrediction = savedInstanceState.getInt("percpred");
 		} else {
 			Bundle b = getIntent().getExtras();
 			url = b.getString("url");
@@ -95,6 +99,7 @@ public class ArticleView extends Activity {
 			feedId = b.getLong("feedId");
 			bleuVal = b.getDouble("bleu");
 			timeDiff = b.getLong("time");
+			perceptronPrediction = b.getInt("percpred");
 		}
 		setTitle(title);
 		String toDisplay = generateHTMLContent(content, commonWords);
@@ -117,23 +122,6 @@ public class ArticleView extends Activity {
 		outState.putLong("feedId", feedId);
 		outState.putDouble("bleu", bleuVal);
 		outState.putLong("time", timeDiff);
-	}
-
-	@Override
-	public void onDestroy() { 
-		super.onDestroy();
-		if (read == false && learned == false) {
-			Perceptron perceptron = Perceptron.getInstance(this);
-			TIntDoubleHashMap pX = perceptron.generateX(bleuVal, feedId, commonWords.size(), timeDiff);
-			perceptron.learnArticle(pX, -1);
-		}
-		try {
-			NewsDroidDB db = new NewsDroidDB(this);
-			db.open();
-			db.close();
-		} catch (RuntimeException e) {
-			Log.e("NewsDroid", e.toString());
-		}
 	}
 
 	private String generateHTMLContent(String in, ArrayList<String> commonWords) {

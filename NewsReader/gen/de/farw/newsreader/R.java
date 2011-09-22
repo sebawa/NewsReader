@@ -34,23 +34,24 @@ public final class R {
         public static final int webview=0x7f030005;
     }
     public static final class string {
-        public static final int all_read=0x7f050014;
-        public static final int already_updating=0x7f050012;
+        public static final int all_read=0x7f050013;
+        public static final int already_updating=0x7f050011;
         public static final int app_name=0x7f050000;
         public static final int articles_list=0x7f050008;
         public static final int button_cancel=0x7f050006;
         public static final int button_ok=0x7f050005;
-        public static final int importing=0x7f050013;
+        public static final int importing=0x7f050012;
         public static final int invalid_url=0x7f050009;
         public static final int invalid_url_content=0x7f05000a;
-        public static final int loading_dialog=0x7f05000f;
+        public static final int loading_dialog=0x7f05000e;
         public static final int menu_delete=0x7f050002;
-        public static final int menu_import=0x7f050011;
+        public static final int menu_dont_know=0x7f050015;
+        public static final int menu_import=0x7f050010;
         public static final int menu_insert=0x7f050001;
-        public static final int menu_read=0x7f05000e;
+        public static final int menu_know=0x7f050014;
         public static final int menu_refresh_articles=0x7f050003;
         public static final int menu_refresh_feeds=0x7f050004;
-        public static final int no_internet=0x7f050010;
+        public static final int no_internet=0x7f05000f;
         public static final int ok=0x7f05000b;
         public static final int read_more=0x7f05000d;
         public static final int unread=0x7f05000c;

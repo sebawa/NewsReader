@@ -127,11 +127,13 @@ public class ArticlesList extends ListActivity implements IList, ListView.OnScro
 			i.putExtra("feedId", currentArticle.feedId);
 			i.putExtra("bleu", currentArticle.bleuData.bleuValue);
 			i.putExtra("time", currentArticle.bleuData.timeDiff);
+			i.putExtra("percpred", currentArticle.perceptronPrediction);
 			startActivity(i);
 		} catch (Exception e) {
 			Log.e("NewsDroid", e.toString());
 		}
 		currentArticle.read = true;
+		adapter.notifyDataSetChanged();
 	}
 
 	@Override
